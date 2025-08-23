@@ -32,9 +32,9 @@ export default function MessagesScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={styles.container}>
         <Stack.Screen options={{ title: 'Messages' }} />
-        <View style={styles.loadingContainer}>
+        <View style={[styles.loadingContainer, { paddingTop: Math.max(insets.top + 10, 50) }]}>
           <ActivityIndicator size="large" color="#1DBF73" />
           <Text style={styles.loadingText}>Loading conversations...</Text>
         </View>
@@ -43,14 +43,14 @@ export default function MessagesScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+    <View style={styles.container}>
       <Stack.Screen options={{ title: 'Messages' }} />
       
       <FlatList
         data={mockConversations}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ConversationCard conversation={item} />}
-        style={styles.list}
+        style={[styles.list, { paddingTop: Math.max(insets.top + 10, 50) }]}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>

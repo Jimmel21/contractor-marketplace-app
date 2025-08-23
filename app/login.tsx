@@ -45,7 +45,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+    <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView 

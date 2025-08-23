@@ -13,13 +13,20 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Send, MoreHorizontal, DollarSign, CreditCard, X, CheckCircle, Star } from 'lucide-react-native';
 import ReviewModal from '@/components/ReviewModal';
 import { Message } from '@/types/message';
 import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
 
 interface ChatMessage extends Message {
   isOwn: boolean;
@@ -87,6 +94,7 @@ export default function ChatScreen() {
     paymentComplete?: string;
   }>();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>('');
   const [showActionsSheet, setShowActionsSheet] = useState(false);
@@ -588,10 +596,11 @@ export default function ChatScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   messagesList: {
     flex: 1,
@@ -959,4 +968,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#666',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

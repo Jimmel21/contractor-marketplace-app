@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Alert,
+  Dimensions,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
@@ -25,10 +28,16 @@ import { mockServices } from '@/mocks/services';
 import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
+
 export default function ServiceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const insets = useSafeAreaInsets();
 
   const service = mockServices.find(s => s.id === id);
 
@@ -128,7 +137,7 @@ export default function ServiceDetailScreen() {
           
           {/* Navigation Overlay */}
           <TouchableOpacity
-            style={styles.backNav}
+            style={[styles.backNav, { top: Math.max(insets.top + 10, 50) }]}
             onPress={() => router.back()}
           >
             <ArrowLeft size={24} color="white" />
@@ -152,7 +161,7 @@ export default function ServiceDetailScreen() {
           )}
           
           {service.featured && (
-            <View style={styles.featuredBadge}>
+            <View style={[styles.featuredBadge, { top: Math.max(insets.top + 10, 50) }]}>
               <Award size={16} color="white" />
               <Text style={styles.featuredText}>Featured</Text>
             </View>
@@ -246,10 +255,11 @@ export default function ServiceDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   scrollView: {
     flex: 1,
@@ -266,7 +276,7 @@ const styles = StyleSheet.create({
   backNav: {
     position: 'absolute',
     top: 50,
-    left: 20,
+    left: isSmallScreen ? 16 : (isTablet ? 32 : 20),
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     borderRadius: 20,
     padding: 8,
@@ -307,7 +317,7 @@ const styles = StyleSheet.create({
   featuredBadge: {
     position: 'absolute',
     top: 50,
-    right: 20,
+    right: isSmallScreen ? 16 : (isTablet ? 32 : 20),
     backgroundColor: '#FF6B35',
     flexDirection: 'row',
     alignItems: 'center',
@@ -497,4 +507,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

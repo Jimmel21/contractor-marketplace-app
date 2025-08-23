@@ -11,14 +11,21 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
-  Modal
+  Modal,
+  Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, DollarSign, Camera, ChevronDown, X, ImageIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
 
 export default function CreateServiceScreen() {
   const [title, setTitle] = useState('');
@@ -32,6 +39,7 @@ export default function CreateServiceScreen() {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const unsplashImages = [
     'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400&h=300&fit=crop',
@@ -228,10 +236,10 @@ export default function CreateServiceScreen() {
       >
         <LinearGradient
           colors={['#1DBF73', '#17A85C']}
-          style={styles.header}
+          style={[styles.header, { paddingTop: Math.max(insets.top + 10, 50) }]}
         >
           <TouchableOpacity 
-            style={styles.backButton}
+            style={[styles.backButton, { top: Math.max(insets.top + 10, 50) }]}
             onPress={() => router.back()}
           >
             <ArrowLeft size={24} color="white" />
@@ -523,24 +531,25 @@ export default function CreateServiceScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   keyboardView: {
     flex: 1,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    paddingTop: 50,
     alignItems: 'center',
     position: 'relative',
   },
   backButton: {
     position: 'absolute',
-    left: 20,
-    top: 60,
+    left: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    top: 50,
     padding: 8,
   },
   title: {
@@ -956,4 +965,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '600',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

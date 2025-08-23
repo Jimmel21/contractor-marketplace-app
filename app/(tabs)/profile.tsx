@@ -411,9 +411,9 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={styles.container}>
         <Stack.Screen options={{ title: 'Profile' }} />
-        <View style={styles.loadingContainer}>
+        <View style={[styles.loadingContainer, { paddingTop: Math.max(insets.top + 10, 50) }]}>
           <ActivityIndicator size="large" color="#1DBF73" />
           <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
@@ -423,9 +423,9 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+      <View style={styles.container}>
         <Stack.Screen options={{ title: 'Profile' }} />
-        <View style={styles.errorContainer}>
+        <View style={[styles.errorContainer, { paddingTop: Math.max(insets.top + 10, 50) }]}>
           <Text style={styles.errorText}>User not found</Text>
         </View>
       </View>
@@ -433,7 +433,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
+    <View style={styles.container}>
       <Stack.Screen options={{ title: 'Profile' }} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
