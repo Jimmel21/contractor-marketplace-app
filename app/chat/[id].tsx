@@ -15,7 +15,7 @@ import {
   Alert,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import { Send, MoreHorizontal, DollarSign, CreditCard, X } from 'lucide-react-native';
+import { Send, MoreHorizontal, DollarSign, CreditCard, X, CheckCircle, Star } from 'lucide-react-native';
 import { Message } from '@/types/message';
 import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
@@ -29,6 +29,12 @@ interface PaymentRequest {
   serviceTitle: string;
   amount: string;
   notes: string;
+}
+
+interface EscrowPayment {
+  amount: number;
+  serviceTitle: string;
+  timestamp: string;
 }
 
 const mockMessages: Message[] = [
@@ -89,6 +95,10 @@ export default function ChatScreen() {
     amount: '',
     notes: ''
   });
+  const [escrowPayment, setEscrowPayment] = useState<EscrowPayment | null>(null);
+  const [jobCompleted, setJobCompleted] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showReviewInvitation, setShowReviewInvitation] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   
   const conversation = mockConversations.find(c => c.id === id);
@@ -108,6 +118,12 @@ export default function ChatScreen() {
     if (paymentComplete) {
       const amount = parseFloat(paymentComplete);
       if (!isNaN(amount)) {
+        const payment: EscrowPayment = {
+          amount,
+          serviceTitle: 'Web Development Service', // Mock service title
+          timestamp: new Date().toISOString()
+        };
+        setEscrowPayment(payment);
         addSystemMessage(`Payment of ${amount} placed in escrow.`);
         // Clear the parameter to prevent duplicate messages
         router.replace(`/chat/${id}`);
@@ -198,6 +214,39 @@ export default function ChatScreen() {
     setShowPaymentRequestForm(false);
   };
 
+  const handleMarkJobComplete = () => {
+    setShowCompletionModal(true);
+  };
+
+  const confirmJobCompletion = () => {
+    if (!escrowPayment) return;
+
+    // Mark job as completed
+    setJobCompleted(true);
+    setShowCompletionModal(false);
+
+    // Add system message
+    addSystemMessage(`Job marked complete. Payment of ${escrowPayment.amount} released to contractor.`);
+
+    // Mock: Update contractor's balance (in real app, this would be an API call)
+    console.log(`Contractor balance updated: +${escrowPayment.amount}`);
+
+    // Show review invitation after a short delay
+    setTimeout(() => {
+      setShowReviewInvitation(true);
+    }, 1000);
+  };
+
+  const handleLeaveReview = () => {
+    setShowReviewInvitation(false);
+    // Navigate to reviews screen with service context
+    router.push(`/reviews?serviceId=service_1&contractorId=${otherParticipant?.id}`);
+  };
+
+  const skipReview = () => {
+    setShowReviewInvitation(false);
+  };
+
   const formatMessageTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -255,7 +304,22 @@ export default function ChatScreen() {
         <Stack.Screen 
           options={{ 
             title: otherParticipant?.name || 'Chat',
-            headerBackTitle: 'Messages'
+            headerBackTitle: 'Messages',
+            headerRight: () => {
+              // Show "Mark Job Complete" button for clients when payment is in escrow and job not completed
+              if (user?.type === 'client' && escrowPayment && !jobCompleted) {
+                return (
+                  <TouchableOpacity 
+                    onPress={handleMarkJobComplete}
+                    style={styles.headerButton}
+                  >
+                    <CheckCircle size={20} color="#1DBF73" />
+                    <Text style={styles.headerButtonText}>Complete</Text>
+                  </TouchableOpacity>
+                );
+              }
+              return null;
+            }
           }} 
         />
         
@@ -416,6 +480,89 @@ export default function ChatScreen() {
                 />
               </View>
             </ScrollView>
+          </SafeAreaView>
+        </Modal>
+
+        {/* Job Completion Confirmation Modal */}
+        <Modal
+          visible={showCompletionModal}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setShowCompletionModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.confirmationModal}>
+              <CheckCircle size={48} color="#1DBF73" style={styles.confirmationIcon} />
+              <Text style={styles.confirmationTitle}>Mark Job Complete?</Text>
+              <Text style={styles.confirmationText}>
+                This will release the payment of ${escrowPayment?.amount} to the contractor. This action cannot be undone.
+              </Text>
+              
+              <View style={styles.confirmationButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={() => setShowCompletionModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.confirmButton}
+                  onPress={confirmJobCompletion}
+                >
+                  <Text style={styles.confirmButtonText}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Review Invitation Modal */}
+        <Modal
+          visible={showReviewInvitation}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={skipReview}
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                onPress={skipReview}
+                style={styles.modalCloseButton}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Job Complete!</Text>
+              <View style={styles.modalCloseButton} />
+            </View>
+            
+            <View style={styles.reviewInvitationContent}>
+              <Star size={64} color="#FFD700" fill="#FFD700" style={styles.reviewIcon} />
+              
+              <Text style={styles.reviewInvitationTitle}>
+                How was your experience?
+              </Text>
+              
+              <Text style={styles.reviewInvitationText}>
+                Help other users by sharing your experience with {otherParticipant?.name}. Your feedback helps maintain quality on our platform.
+              </Text>
+              
+              <View style={styles.reviewInvitationButtons}>
+                <TouchableOpacity 
+                  style={styles.reviewButton}
+                  onPress={handleLeaveReview}
+                >
+                  <Text style={styles.reviewButtonText}>Leave Review</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.skipReviewButton}
+                  onPress={skipReview}
+                >
+                  <Text style={styles.skipReviewButtonText}>Maybe Later</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </SafeAreaView>
         </Modal>
       </SafeAreaView>
@@ -665,5 +812,132 @@ const styles = StyleSheet.create({
   formTextArea: {
     height: 100,
     textAlignVertical: 'top',
+  },
+  headerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#f0f9f4',
+    borderRadius: 16,
+    marginRight: 8,
+  },
+  headerButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1DBF73',
+    marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  confirmationModal: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    maxWidth: 320,
+    width: '100%',
+  },
+  confirmationIcon: {
+    marginBottom: 16,
+  },
+  confirmationTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmationText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  confirmationButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: '#1DBF73',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  reviewInvitationContent: {
+    flex: 1,
+    padding: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reviewIcon: {
+    marginBottom: 24,
+  },
+  reviewInvitationTitle: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  reviewInvitationText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+  },
+  reviewInvitationButtons: {
+    width: '100%',
+    gap: 12,
+  },
+  reviewButton: {
+    backgroundColor: '#1DBF73',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  reviewButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: 'white',
+  },
+  skipReviewButton: {
+    backgroundColor: '#f8f9fa',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  skipReviewButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
   },
 });
