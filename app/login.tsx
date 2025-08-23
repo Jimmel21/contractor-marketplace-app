@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react-native';
 import { useAuth } from '@/hooks/auth-store';
 
 export default function LoginScreen() {
@@ -87,13 +87,25 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
+              style={styles.forgotPassword}
+              onPress={() => Alert.alert('Forgot Password', 'Password reset functionality will be implemented soon.')}
+            >
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.loginButton, isLoading && styles.disabledButton]}
               onPress={handleLogin}
               disabled={isLoading}
             >
-              <Text style={styles.loginButtonText}>
-                {isLoading ? 'Signing In...' : 'Sign In'}
-              </Text>
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Loader2 size={20} color="white" style={styles.loadingIcon} />
+                  <Text style={styles.loginButtonText}>Signing In...</Text>
+                </View>
+              ) : (
+                <Text style={styles.loginButtonText}>Sign In</Text>
+              )}
             </TouchableOpacity>
 
             <View style={styles.footer}>
@@ -193,5 +205,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1DBF73',
     fontWeight: '600',
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    color: '#1DBF73',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingIcon: {
+    marginRight: 8,
   },
 });
