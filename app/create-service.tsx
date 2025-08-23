@@ -21,6 +21,7 @@ import { ArrowLeft, DollarSign, Camera, ChevronDown, X, ImageIcon } from 'lucide
 import * as ImagePicker from 'expo-image-picker';
 import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
+import { useTheme } from '@/hooks/theme-store';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
@@ -39,6 +40,7 @@ export default function CreateServiceScreen() {
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const { user } = useAuth();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const unsplashImages = [
@@ -223,7 +225,7 @@ export default function CreateServiceScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen 
         options={{ 
           headerShown: false
@@ -248,12 +250,12 @@ export default function CreateServiceScreen() {
           <Text style={styles.subtitle}>Share your skills with the world</Text>
         </LinearGradient>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView style={[styles.content, { backgroundColor: theme.colors.background }]} showsVerticalScrollIndicator={false}>
           <View style={styles.form}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Service Title *</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Service Title *</Text>
               <TextInput
-                style={[styles.input, errors.title && styles.inputError]}
+                style={[styles.input, { backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.border }, errors.title && styles.inputError]}
                 placeholder="e.g., I will design a professional logo"
                 value={title}
                 onChangeText={(text) => {
@@ -262,15 +264,15 @@ export default function CreateServiceScreen() {
                     setErrors(prev => ({ ...prev, title: '' }));
                   }
                 }}
-                placeholderTextColor="#666"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Description *</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Description *</Text>
               <TextInput
-                style={[styles.input, styles.textArea, errors.description && styles.inputError]}
+                style={[styles.input, styles.textArea, { backgroundColor: theme.colors.surface, color: theme.colors.text, borderColor: theme.colors.border }, errors.description && styles.inputError]}
                 placeholder="Describe your service in detail... (minimum 50 characters)"
                 value={description}
                 onChangeText={(text) => {
@@ -282,19 +284,19 @@ export default function CreateServiceScreen() {
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
-                placeholderTextColor="#666"
+                placeholderTextColor={theme.colors.textSecondary}
               />
-              <Text style={styles.characterCount}>{description.length}/50 minimum</Text>
+              <Text style={[styles.characterCount, { color: theme.colors.textSecondary }]}>{description.length}/50 minimum</Text>
               {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Category *</Text>
+              <Text style={[styles.label, { color: theme.colors.text }]}>Category *</Text>
               <TouchableOpacity
-                style={[styles.dropdownButton, errors.category && styles.inputError]}
+                style={[styles.dropdownButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }, errors.category && styles.inputError]}
                 onPress={() => setShowCategoryModal(true)}
               >
-                <Text style={[styles.dropdownText, !selectedCategory && styles.placeholderText]}>
+                <Text style={[styles.dropdownText, { color: selectedCategory ? theme.colors.text : theme.colors.textSecondary }, !selectedCategory && styles.placeholderText]}>
                   {selectedCategory || 'Select a category'}
                 </Text>
                 <ChevronDown size={20} color="#666" />

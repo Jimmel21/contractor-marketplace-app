@@ -21,6 +21,7 @@ import FilterModal from '@/components/FilterModal';
 import { mockServices, getFilterOptions } from '@/mocks/services';
 import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
+import { useTheme } from '@/hooks/theme-store';
 import { ServiceFilters } from '@/types/service';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
@@ -88,17 +90,17 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
           <ActivityIndicator size="large" color="#1DBF73" />
-          <Text style={styles.loadingText}>Loading services...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading services...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
         colors={['#1DBF73', '#17A85C']}
         style={[styles.header, { paddingTop: Math.max(insets.top + 10, 50) }]}
@@ -138,9 +140,9 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.content, { backgroundColor: theme.colors.background }]} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Categories</Text>
           <FlatList
             data={categories}
             horizontal
@@ -164,7 +166,7 @@ export default function HomeScreen() {
               <View style={styles.activeFiltersRow}>
                 {selectedCategory && (
                   <View style={styles.activeFilterChip}>
-                    <Text style={styles.activeFilterText}>Category: {selectedCategory}</Text>
+                    <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>Category: {selectedCategory}</Text>
                     <TouchableOpacity onPress={() => setSelectedCategory(null)}>
                       <Text style={styles.removeFilter}>×</Text>
                     </TouchableOpacity>
@@ -173,7 +175,7 @@ export default function HomeScreen() {
                 {filters.location && (
                   <View style={styles.activeFilterChip}>
                     <MapPin size={12} color="#1976D2" />
-                    <Text style={styles.activeFilterText}>{filters.location}</Text>
+                    <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>{filters.location}</Text>
                     <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, location: undefined }))}>
                       <Text style={styles.removeFilter}>×</Text>
                     </TouchableOpacity>
@@ -182,7 +184,7 @@ export default function HomeScreen() {
                 {filters.minRating && (
                   <View style={styles.activeFilterChip}>
                     <Star size={12} color="#1976D2" fill="#1976D2" />
-                    <Text style={styles.activeFilterText}>{filters.minRating}+</Text>
+                    <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>{filters.minRating}+</Text>
                     <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, minRating: undefined }))}>
                       <Text style={styles.removeFilter}>×</Text>
                     </TouchableOpacity>
@@ -191,7 +193,7 @@ export default function HomeScreen() {
                 {filters.maxBudget && (
                   <View style={styles.activeFilterChip}>
                     <DollarSign size={12} color="#1976D2" />
-                    <Text style={styles.activeFilterText}>Under ${filters.maxBudget}</Text>
+                    <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>Under ${filters.maxBudget}</Text>
                     <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, maxBudget: undefined }))}>
                       <Text style={styles.removeFilter}>×</Text>
                     </TouchableOpacity>
@@ -200,7 +202,7 @@ export default function HomeScreen() {
                 {filters.maxDeliveryTime && (
                   <View style={styles.activeFilterChip}>
                     <Clock size={12} color="#1976D2" />
-                    <Text style={styles.activeFilterText}>{filters.maxDeliveryTime} day{filters.maxDeliveryTime > 1 ? 's' : ''}</Text>
+                    <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>{filters.maxDeliveryTime} day{filters.maxDeliveryTime > 1 ? 's' : ''}</Text>
                     <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, maxDeliveryTime: undefined }))}>
                       <Text style={styles.removeFilter}>×</Text>
                     </TouchableOpacity>
@@ -218,7 +220,7 @@ export default function HomeScreen() {
 
         {featuredServices.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Featured Services</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Featured Services</Text>
             {featuredServices.map((service) => (
               <ServiceCard key={service.id} service={service} />
             ))}
@@ -226,7 +228,7 @@ export default function HomeScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             {featuredServices.length > 0 ? 'More Services' : 'All Services'}
           </Text>
           {regularServices.map((service) => (
@@ -236,8 +238,8 @@ export default function HomeScreen() {
 
         {filteredServices.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No services found</Text>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No services found</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
               Try adjusting your search or browse different categories
             </Text>
             <TouchableOpacity style={styles.clearFiltersButton} onPress={clearAllFilters}>
@@ -343,7 +345,6 @@ const baseStyles = {
   },
   content: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   section: {
     paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
@@ -353,7 +354,6 @@ const baseStyles = {
   sectionTitle: {
     fontSize: isSmallScreen ? 18 : (isTablet ? 24 : 20),
     fontWeight: '700',
-    color: '#1a1a1a',
     marginBottom: isSmallScreen ? 12 : 16,
   },
   categoriesList: {
@@ -379,7 +379,6 @@ const baseStyles = {
   },
   activeFilterText: {
     fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
-    color: '#1976D2',
     fontWeight: '500',
   },
   removeFilter: {
@@ -406,12 +405,10 @@ const baseStyles = {
   emptyTitle: {
     fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 8,
   },
   emptyText: {
     fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    color: '#666',
     textAlign: 'center',
     marginBottom: isSmallScreen ? 16 : 20,
     maxWidth: isTablet ? 400 : '100%',
@@ -431,12 +428,10 @@ const baseStyles = {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
   },
   loadingText: {
     marginTop: 16,
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    color: '#666',
     fontWeight: '500',
   },
   floatingButton: {

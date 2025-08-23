@@ -17,6 +17,7 @@ import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react-native';
 import { useAuth } from '@/hooks/auth-store';
+import { useTheme } from '@/hooks/theme-store';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
@@ -34,6 +35,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { register, isLoading } = useAuth();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const validateForm = () => {
@@ -107,7 +109,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView 
@@ -125,27 +127,27 @@ export default function RegisterScreen() {
 
           <View style={styles.form}>
             <View style={styles.fieldContainer}>
-              <View style={[styles.inputContainer, errors.name && styles.inputError]}>
-                <User size={20} color={errors.name ? "#FF6B6B" : "#666"} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }, errors.name && styles.inputError]}>
+                <User size={20} color={errors.name ? "#FF6B6B" : theme.colors.textSecondary} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Full Name"
                   value={name}
                   onChangeText={(text) => {
                     setName(text);
                     clearError('name');
                   }}
-                  placeholderTextColor="#666"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
               {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
             </View>
 
             <View style={styles.fieldContainer}>
-              <View style={[styles.inputContainer, errors.email && styles.inputError]}>
-                <Mail size={20} color={errors.email ? "#FF6B6B" : "#666"} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }, errors.email && styles.inputError]}>
+                <Mail size={20} color={errors.email ? "#FF6B6B" : theme.colors.textSecondary} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Email"
                   value={email}
                   onChangeText={(text) => {
@@ -154,17 +156,17 @@ export default function RegisterScreen() {
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
-                  placeholderTextColor="#666"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
               {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             <View style={styles.fieldContainer}>
-              <View style={[styles.inputContainer, errors.phone && styles.inputError]}>
-                <Phone size={20} color={errors.phone ? "#FF6B6B" : "#666"} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }, errors.phone && styles.inputError]}>
+                <Phone size={20} color={errors.phone ? "#FF6B6B" : theme.colors.textSecondary} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Phone Number"
                   value={phone}
                   onChangeText={(text) => {
@@ -172,17 +174,17 @@ export default function RegisterScreen() {
                     clearError('phone');
                   }}
                   keyboardType="phone-pad"
-                  placeholderTextColor="#666"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
               </View>
               {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
             </View>
 
             <View style={styles.fieldContainer}>
-              <View style={[styles.inputContainer, errors.password && styles.inputError]}>
-                <Lock size={20} color={errors.password ? "#FF6B6B" : "#666"} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }, errors.password && styles.inputError]}>
+                <Lock size={20} color={errors.password ? "#FF6B6B" : theme.colors.textSecondary} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Password"
                   value={password}
                   onChangeText={(text) => {
@@ -190,13 +192,13 @@ export default function RegisterScreen() {
                     clearError('password');
                   }}
                   secureTextEntry={!showPassword}
-                  placeholderTextColor="#666"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
                 <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                   {showPassword ? (
-                    <EyeOff size={20} color={errors.password ? "#FF6B6B" : "#666"} />
+                    <EyeOff size={20} color={errors.password ? "#FF6B6B" : theme.colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={errors.password ? "#FF6B6B" : "#666"} />
+                    <Eye size={20} color={errors.password ? "#FF6B6B" : theme.colors.textSecondary} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -204,10 +206,10 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.fieldContainer}>
-              <View style={[styles.inputContainer, errors.confirmPassword && styles.inputError]}>
-                <Lock size={20} color={errors.confirmPassword ? "#FF6B6B" : "#666"} />
+              <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }, errors.confirmPassword && styles.inputError]}>
+                <Lock size={20} color={errors.confirmPassword ? "#FF6B6B" : theme.colors.textSecondary} />
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input, { color: theme.colors.text }]}
                   placeholder="Confirm Password"
                   value={confirmPassword}
                   onChangeText={(text) => {
@@ -215,13 +217,13 @@ export default function RegisterScreen() {
                     clearError('confirmPassword');
                   }}
                   secureTextEntry={!showConfirmPassword}
-                  placeholderTextColor="#666"
+                  placeholderTextColor={theme.colors.textSecondary}
                 />
                 <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
                   {showConfirmPassword ? (
-                    <EyeOff size={20} color={errors.confirmPassword ? "#FF6B6B" : "#666"} />
+                    <EyeOff size={20} color={errors.confirmPassword ? "#FF6B6B" : theme.colors.textSecondary} />
                   ) : (
-                    <Eye size={20} color={errors.confirmPassword ? "#FF6B6B" : "#666"} />
+                    <Eye size={20} color={errors.confirmPassword ? "#FF6B6B" : theme.colors.textSecondary} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -229,7 +231,7 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.userTypeContainer}>
-              <Text style={styles.userTypeLabel}>I am a:</Text>
+              <Text style={[styles.userTypeLabel, { color: theme.colors.text }]}>I am a:</Text>
               <View style={styles.userTypeButtons}>
                 <TouchableOpacity
                   style={[
@@ -290,7 +292,7 @@ export default function RegisterScreen() {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Already have an account? </Text>
+              <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>Already have an account? </Text>
               <TouchableOpacity onPress={() => router.back()}>
                 <Text style={styles.linkText}>Sign In</Text>
               </TouchableOpacity>
@@ -305,7 +307,6 @@ export default function RegisterScreen() {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   keyboardView: {
@@ -340,7 +341,6 @@ const baseStyles = {
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: isSmallScreen ? 10 : 12,
     paddingHorizontal: isSmallScreen ? 12 : (isTablet ? 20 : 16),
     paddingVertical: isSmallScreen ? 12 : (isTablet ? 20 : 16),
@@ -366,7 +366,6 @@ const baseStyles = {
     flex: 1,
     marginLeft: isSmallScreen ? 8 : 12,
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    color: '#1a1a1a',
   },
   userTypeContainer: {
     marginBottom: 20,
@@ -374,7 +373,6 @@ const baseStyles = {
   userTypeLabel: {
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 12,
   },
   userTypeButtons: {
@@ -451,7 +449,6 @@ const baseStyles = {
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
   },
   linkText: {
     fontSize: 14,

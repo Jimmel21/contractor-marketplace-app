@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import ConversationCard from '@/components/ConversationCard';
 import { mockConversations } from '@/mocks/conversations';
+import { useTheme } from '@/hooks/theme-store';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
@@ -21,6 +22,7 @@ const isWeb = Platform.OS === 'web';
 
 export default function MessagesScreen() {
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
@@ -32,18 +34,18 @@ export default function MessagesScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Stack.Screen options={{ title: 'Messages' }} />
-        <View style={[styles.loadingContainer, { paddingTop: Math.max(insets.top + 10, 50) }]}>
+        <View style={[styles.loadingContainer, { paddingTop: Math.max(insets.top + 10, 50), backgroundColor: theme.colors.background }]}>
           <ActivityIndicator size="large" color="#1DBF73" />
-          <Text style={styles.loadingText}>Loading conversations...</Text>
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading conversations...</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen options={{ title: 'Messages' }} />
       
       <FlatList
@@ -54,8 +56,8 @@ export default function MessagesScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No messages yet</Text>
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>No messages yet</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
               Start a conversation with a contractor or client
             </Text>
           </View>
@@ -68,7 +70,6 @@ export default function MessagesScreen() {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   list: {
@@ -83,12 +84,10 @@ const baseStyles = {
   emptyTitle: {
     fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: 8,
   },
   emptyText: {
     fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    color: '#666',
     textAlign: 'center',
     maxWidth: isTablet ? 400 : '100%',
   },
@@ -96,12 +95,10 @@ const baseStyles = {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
   },
   loadingText: {
     marginTop: 16,
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    color: '#666',
     fontWeight: '500',
   },
 };

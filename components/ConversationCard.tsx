@@ -2,12 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Conversation } from '@/types/message';
 import { router } from 'expo-router';
+import { useTheme } from '@/hooks/theme-store';
 
 interface ConversationCardProps {
   conversation: Conversation;
 }
 
 export default function ConversationCard({ conversation }: ConversationCardProps) {
+  const { theme } = useTheme();
   const otherParticipant = conversation.participants.find(p => p.id !== 'current');
   
   const handlePress = () => {
@@ -27,7 +29,7 @@ export default function ConversationCard({ conversation }: ConversationCardProps
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: theme.colors.surface }]} onPress={handlePress}>
       <Image 
         source={{ uri: otherParticipant?.avatar || 'https://via.placeholder.com/50' }} 
         style={styles.avatar} 
@@ -35,15 +37,16 @@ export default function ConversationCard({ conversation }: ConversationCardProps
       
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name}>{otherParticipant?.name}</Text>
-          <Text style={styles.time}>{formatTime(conversation.lastMessage.timestamp)}</Text>
+          <Text style={[styles.name, { color: theme.colors.text }]}>{otherParticipant?.name}</Text>
+          <Text style={[styles.time, { color: theme.colors.textSecondary }]}>{formatTime(conversation.lastMessage.timestamp)}</Text>
         </View>
         
         <View style={styles.messageRow}>
           <Text 
             style={[
               styles.lastMessage,
-              !conversation.lastMessage.read && styles.unreadMessage
+              { color: theme.colors.textSecondary },
+              !conversation.lastMessage.read && [styles.unreadMessage, { color: theme.colors.text }]
             ]} 
             numberOfLines={1}
           >
@@ -66,7 +69,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 16,
-    backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
@@ -88,11 +90,9 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   time: {
     fontSize: 12,
-    color: '#666',
   },
   messageRow: {
     flexDirection: 'row',
@@ -101,12 +101,10 @@ const styles = StyleSheet.create({
   },
   lastMessage: {
     fontSize: 14,
-    color: '#666',
     flex: 1,
   },
   unreadMessage: {
     fontWeight: '600',
-    color: '#1a1a1a',
   },
   unreadBadge: {
     backgroundColor: '#1DBF73',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'rea
 import { Star, Clock, MapPin } from 'lucide-react-native';
 import { Service } from '@/types/service';
 import { router } from 'expo-router';
+import { useTheme } from '@/hooks/theme-store';
 
 const { width: screenWidth } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
@@ -13,12 +14,14 @@ interface ServiceCardProps {
 }
 
 export default function ServiceCard({ service }: ServiceCardProps) {
+  const { theme } = useTheme();
+  
   const handlePress = () => {
     router.push(`/service-detail?id=${service.id}`);
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={handlePress}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: theme.colors.surface }]} onPress={handlePress}>
       <Image source={{ uri: service.images[0] }} style={styles.image} />
       
       {service.featured && (
@@ -28,7 +31,7 @@ export default function ServiceCard({ service }: ServiceCardProps) {
       )}
       
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
           {service.title}
         </Text>
         
@@ -37,26 +40,26 @@ export default function ServiceCard({ service }: ServiceCardProps) {
             source={{ uri: service.contractor.avatar || 'https://via.placeholder.com/30' }} 
             style={styles.avatar} 
           />
-          <Text style={styles.contractorName}>{service.contractor.name}</Text>
+          <Text style={[styles.contractorName, { color: theme.colors.textSecondary }]}>{service.contractor.name}</Text>
         </View>
         
         <View style={styles.metaRow}>
           <View style={styles.rating}>
             <Star size={14} color="#FFD700" fill="#FFD700" />
-            <Text style={styles.ratingText}>
+            <Text style={[styles.ratingText, { color: theme.colors.textSecondary }]}>
               {service.rating} ({service.reviewCount})
             </Text>
           </View>
           <View style={styles.location}>
             <MapPin size={12} color="#999" />
-            <Text style={styles.locationText}>{service.location}</Text>
+            <Text style={[styles.locationText, { color: theme.colors.textTertiary }]}>{service.location}</Text>
           </View>
         </View>
         
         <View style={styles.footer}>
           <View style={styles.delivery}>
             <Clock size={14} color="#666" />
-            <Text style={styles.deliveryText}>{service.deliveryTime}</Text>
+            <Text style={[styles.deliveryText, { color: theme.colors.textSecondary }]}>{service.deliveryTime}</Text>
           </View>
           <Text style={styles.price}>From ${service.price}</Text>
         </View>
@@ -67,7 +70,6 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     borderRadius: isSmallScreen ? 10 : 12,
     marginBottom: isSmallScreen ? 12 : 16,
     shadowColor: '#000',
@@ -102,7 +104,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     fontWeight: '600',
-    color: '#1a1a1a',
     marginBottom: isSmallScreen ? 8 : 12,
     lineHeight: isSmallScreen ? 18 : (isTablet ? 24 : 22),
   },
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
   },
   contractorName: {
     fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    color: '#666',
     fontWeight: '500',
   },
   metaRow: {
@@ -138,12 +138,10 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
-    color: '#999',
     marginLeft: 4,
   },
   ratingText: {
     fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    color: '#666',
     marginLeft: 4,
     fontWeight: '500',
   },
@@ -158,7 +156,6 @@ const styles = StyleSheet.create({
   },
   deliveryText: {
     fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    color: '#666',
     marginLeft: 4,
   },
   price: {

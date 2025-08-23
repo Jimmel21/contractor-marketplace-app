@@ -17,6 +17,7 @@ import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react-native';
 import { useAuth } from '@/hooks/auth-store';
+import { useTheme } from '@/hooks/theme-store';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenWidth < 375;
@@ -28,6 +29,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuth();
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
   const handleLogin = async () => {
@@ -45,7 +47,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView 
@@ -62,34 +64,34 @@ export default function LoginScreen() {
           </LinearGradient>
 
           <View style={styles.form}>
-            <View style={styles.inputContainer}>
-              <Mail size={20} color="#666" />
+            <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }]}>
+              <Mail size={20} color={theme.colors.textSecondary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Email"
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                placeholderTextColor="#666"
+                placeholderTextColor={theme.colors.textSecondary}
               />
             </View>
 
-            <View style={styles.inputContainer}>
-              <Lock size={20} color="#666" />
+            <View style={[styles.inputContainer, { backgroundColor: theme.colors.surface }]}>
+              <Lock size={20} color={theme.colors.textSecondary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: theme.colors.text }]}
                 placeholder="Password"
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
-                placeholderTextColor="#666"
+                placeholderTextColor={theme.colors.textSecondary}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
                 {showPassword ? (
-                  <EyeOff size={20} color="#666" />
+                  <EyeOff size={20} color={theme.colors.textSecondary} />
                 ) : (
-                  <Eye size={20} color="#666" />
+                  <Eye size={20} color={theme.colors.textSecondary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -117,7 +119,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Don&apos;t have an account? </Text>
+              <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>Don&apos;t have an account? </Text>
               <TouchableOpacity onPress={() => router.push('/register')}>
                 <Text style={styles.linkText}>Sign Up</Text>
               </TouchableOpacity>
@@ -132,7 +134,6 @@ export default function LoginScreen() {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
     ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   keyboardView: {
@@ -164,7 +165,6 @@ const baseStyles = {
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
     borderRadius: isSmallScreen ? 10 : 12,
     paddingHorizontal: isSmallScreen ? 12 : (isTablet ? 20 : 16),
     paddingVertical: isSmallScreen ? 12 : (isTablet ? 20 : 16),
@@ -179,7 +179,6 @@ const baseStyles = {
     flex: 1,
     marginLeft: isSmallScreen ? 8 : 12,
     fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    color: '#1a1a1a',
   },
   loginButton: {
     backgroundColor: '#1DBF73',
@@ -208,7 +207,6 @@ const baseStyles = {
   },
   footerText: {
     fontSize: 14,
-    color: '#666',
   },
   linkText: {
     fontSize: 14,

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { ServiceCategory } from '@/types/service';
+import { useTheme } from '@/hooks/theme-store';
 import { 
   Code, 
   Palette, 
@@ -29,6 +30,7 @@ const iconMap = {
 };
 
 export default function CategoryCard({ category, onPress }: CategoryCardProps) {
+  const { theme } = useTheme();
   const IconComponent = iconMap[category.icon as keyof typeof iconMap] || Code;
 
   return (
@@ -39,7 +41,7 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
       <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
         <IconComponent size={isSmallScreen ? 18 : (isTablet ? 28 : 24)} color="white" />
       </View>
-      <Text style={styles.name}>{category.name}</Text>
+      <Text style={[styles.name, { color: theme.colors.text }]}>{category.name}</Text>
     </TouchableOpacity>
   );
 }
@@ -65,7 +67,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
     fontWeight: '600',
-    color: '#1a1a1a',
     textAlign: 'center',
   },
 });
