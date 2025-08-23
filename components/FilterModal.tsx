@@ -4,12 +4,17 @@ import {
   Text,
   StyleSheet,
   Modal,
-  TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  Platform,
+  Animated,
+  Pressable,
 } from 'react-native';
-import { X, MapPin, Star, DollarSign, Clock } from 'lucide-react-native';
+import { X, MapPin, Star, DollarSign, Clock, Check } from 'lucide-react-native';
 import { ServiceFilters, FilterOptions } from '@/types/service';
+import { useTheme } from '@/hooks/theme-store';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TYPOGRAPHY, PLATFORM_STYLES } from '@/constants/design-system';
+import * as Haptics from 'expo-haptics';
 
 interface FilterModalProps {
   visible: boolean;
@@ -26,18 +31,50 @@ export default function FilterModal({
   onApplyFilters,
   filterOptions,
 }: FilterModalProps) {
+  const { theme } = useTheme();
   const [localFilters, setLocalFilters] = useState<ServiceFilters>(filters);
+  const [animatedValues] = useState(() => ({
+    scale: new Animated.Value(0.95),
+    opacity: new Animated.Value(0),
+  }));
 
   useEffect(() => {
     setLocalFilters(filters);
   }, [filters]);
 
+  useEffect(() => {
+    if (visible) {
+      Animated.parallel([
+        Animated.spring(animatedValues.scale, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 8,
+        }),
+        Animated.timing(animatedValues.opacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      animatedValues.scale.setValue(0.95);
+      animatedValues.opacity.setValue(0);
+    }
+  }, [visible]);
+
   const handleApply = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     onApplyFilters(localFilters);
     onClose();
   };
 
   const handleReset = () => {
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
     const resetFilters: ServiceFilters = {};
     setLocalFilters(resetFilters);
     onApplyFilters(resetFilters);
@@ -45,340 +82,417 @@ export default function FilterModal({
   };
 
   const updateFilter = (key: keyof ServiceFilters, value: any) => {
+    if (Platform.OS !== 'web') {
+      Haptics.selectionAsync();
+    }
     setLocalFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const renderFilterChip = ({
+    label,
+    isSelected,
+    onPress,
+    icon,
+  }: {
+    label: string;
+    isSelected: boolean;
+    onPress: () => void;
+    icon?: React.ReactNode;
+  }) => {
+    const chipStyle = [
+      styles.modernChip,
+      {
+        backgroundColor: isSelected ? theme.colors.primary : theme.colors.surface,
+        borderColor: isSelected ? theme.colors.primary : theme.colors.border,
+        ...PLATFORM_STYLES.button,
+      },
+    ];
+
+    return (
+      <Pressable
+        style={({ pressed }) => [
+          chipStyle,
+          pressed && Platform.OS === 'ios' && { opacity: 0.7 },
+          pressed && Platform.OS === 'android' && { backgroundColor: isSelected ? theme.colors.primary + '90' : theme.colors.borderLight },
+        ]}
+        onPress={onPress}
+        android_ripple={Platform.OS === 'android' ? {
+          color: isSelected ? 'rgba(255,255,255,0.2)' : theme.colors.primary + '20',
+          borderless: false,
+        } : undefined}
+      >
+        <View style={styles.chipContent}>
+          {icon && <View style={styles.chipIcon}>{icon}</View>}
+          <Text style={[
+            styles.modernChipText,
+            { color: isSelected ? COLORS.white : theme.colors.text }
+          ]}>
+            {label}
+          </Text>
+          {isSelected && (
+            <Check size={16} color={COLORS.white} style={styles.checkIcon} />
+          )}
+        </View>
+      </Pressable>
+    );
   };
 
   const budgetOptions = [50, 100, 200, 300, 500, 1000];
   const deliveryOptions = [1, 3, 7, 14, 30];
 
+  const modalStyle = Platform.select({
+    ios: 'pageSheet',
+    android: 'overFullScreen',
+    default: 'overFullScreen',
+  }) as any;
+
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType={Platform.OS === 'ios' ? 'slide' : 'fade'}
+      presentationStyle={modalStyle}
       onRequestClose={onClose}
+      transparent={Platform.OS !== 'ios'}
     >
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Filter Services</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <X size={24} color="#1a1a1a" />
-          </TouchableOpacity>
+      {Platform.OS !== 'ios' && (
+        <View style={[styles.overlay, { backgroundColor: theme.colors.overlay }]} />
+      )}
+      <Animated.View 
+        style={[
+          styles.container,
+          {
+            backgroundColor: theme.colors.background,
+            transform: [{ scale: animatedValues.scale }],
+            opacity: animatedValues.opacity,
+          },
+          Platform.OS !== 'ios' && styles.androidModal,
+        ]}
+      >
+        <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.header, { borderBottomColor: theme.colors.border }]}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerIndicator} />
+            <Text style={[styles.title, { color: theme.colors.text }, TYPOGRAPHY.h3]}>Filter Services</Text>
+            <Pressable 
+              onPress={onClose} 
+              style={({ pressed }) => [
+                styles.closeButton,
+                { backgroundColor: theme.colors.borderLight },
+                pressed && { opacity: 0.7 }
+              ]}
+              android_ripple={{ color: theme.colors.border, borderless: true }}
+            >
+              <X size={20} color={theme.colors.textSecondary} />
+            </Pressable>
+          </View>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: theme.colors.borderLight }]}>
             <View style={styles.sectionHeader}>
-              <MapPin size={20} color="#1DBF73" />
-              <Text style={styles.sectionTitle}>Location</Text>
+              <View style={[styles.iconContainer, { backgroundColor: theme.colors.primaryLight }]}>
+                <MapPin size={18} color={theme.colors.primary} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }, TYPOGRAPHY.h4]}>Location</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalScroll}>
               <View style={styles.chipContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.chip,
-                    !localFilters.location && styles.chipSelected,
-                  ]}
-                  onPress={() => updateFilter('location', undefined)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      !localFilters.location && styles.chipTextSelected,
-                    ]}
-                  >
-                    All Locations
-                  </Text>
-                </TouchableOpacity>
+                {renderFilterChip({
+                  label: 'All Locations',
+                  isSelected: !localFilters.location,
+                  onPress: () => updateFilter('location', undefined),
+                  icon: <MapPin size={14} color={!localFilters.location ? COLORS.white : theme.colors.textTertiary} />,
+                })}
                 {filterOptions.locations.map((location) => (
-                  <TouchableOpacity
-                    key={location}
-                    style={[
-                      styles.chip,
-                      localFilters.location === location && styles.chipSelected,
-                    ]}
-                    onPress={() => updateFilter('location', location)}
-                  >
-                    <Text
-                      style={[
-                        styles.chipText,
-                        localFilters.location === location && styles.chipTextSelected,
-                      ]}
-                    >
-                      {location}
-                    </Text>
-                  </TouchableOpacity>
+                  <View key={location}>
+                    {renderFilterChip({
+                      label: location,
+                      isSelected: localFilters.location === location,
+                      onPress: () => updateFilter('location', location),
+                    })}
+                  </View>
                 ))}
               </View>
             </ScrollView>
           </View>
 
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: theme.colors.borderLight }]}>
             <View style={styles.sectionHeader}>
-              <Star size={20} color="#1DBF73" />
-              <Text style={styles.sectionTitle}>Minimum Rating</Text>
+              <View style={[styles.iconContainer, { backgroundColor: '#FEF3C7' }]}>
+                <Star size={18} color="#F59E0B" fill="#F59E0B" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }, TYPOGRAPHY.h4]}>Minimum Rating</Text>
             </View>
             <View style={styles.ratingContainer}>
               {[3, 3.5, 4, 4.5, 4.8].map((rating) => (
-                <TouchableOpacity
-                  key={rating}
-                  style={[
-                    styles.ratingChip,
-                    localFilters.minRating === rating && styles.chipSelected,
-                  ]}
-                  onPress={() => 
-                    updateFilter('minRating', localFilters.minRating === rating ? undefined : rating)
-                  }
-                >
-                  <Star 
-                    size={16} 
-                    color={localFilters.minRating === rating ? 'white' : '#FFD700'} 
-                    fill={localFilters.minRating === rating ? 'white' : '#FFD700'}
-                  />
-                  <Text
-                    style={[
-                      styles.ratingText,
-                      localFilters.minRating === rating && styles.chipTextSelected,
-                    ]}
-                  >
-                    {rating}+
-                  </Text>
-                </TouchableOpacity>
+                <View key={rating.toString()}>
+                  {renderFilterChip({
+                    label: `${rating}+`,
+                    isSelected: localFilters.minRating === rating,
+                    onPress: () => updateFilter('minRating', localFilters.minRating === rating ? undefined : rating),
+                    icon: <Star 
+                      size={14} 
+                      color={localFilters.minRating === rating ? COLORS.white : '#F59E0B'} 
+                      fill={localFilters.minRating === rating ? COLORS.white : '#F59E0B'}
+                    />,
+                  })}
+                </View>
               ))}
             </View>
           </View>
 
-          <View style={styles.section}>
+          <View style={[styles.section, { borderBottomColor: theme.colors.borderLight }]}>
             <View style={styles.sectionHeader}>
-              <DollarSign size={20} color="#1DBF73" />
-              <Text style={styles.sectionTitle}>Budget</Text>
+              <View style={[styles.iconContainer, { backgroundColor: '#DBEAFE' }]}>
+                <DollarSign size={18} color="#3B82F6" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }, TYPOGRAPHY.h4]}>Budget</Text>
             </View>
             <View style={styles.budgetContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.chip,
-                  !localFilters.maxBudget && styles.chipSelected,
-                ]}
-                onPress={() => updateFilter('maxBudget', undefined)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    !localFilters.maxBudget && styles.chipTextSelected,
-                  ]}
-                >
-                  Any Budget
-                </Text>
-              </TouchableOpacity>
+              {renderFilterChip({
+                label: 'Any Budget',
+                isSelected: !localFilters.maxBudget,
+                onPress: () => updateFilter('maxBudget', undefined),
+                icon: <DollarSign size={14} color={!localFilters.maxBudget ? COLORS.white : theme.colors.textTertiary} />,
+              })}
               {budgetOptions.map((budget) => (
-                <TouchableOpacity
-                  key={budget}
-                  style={[
-                    styles.chip,
-                    localFilters.maxBudget === budget && styles.chipSelected,
-                  ]}
-                  onPress={() => updateFilter('maxBudget', budget)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      localFilters.maxBudget === budget && styles.chipTextSelected,
-                    ]}
-                  >
-                    Under ${budget}
-                  </Text>
-                </TouchableOpacity>
+                <View key={budget.toString()}>
+                  {renderFilterChip({
+                    label: `Under ${budget}`,
+                    isSelected: localFilters.maxBudget === budget,
+                    onPress: () => updateFilter('maxBudget', budget),
+                  })}
+                </View>
               ))}
             </View>
           </View>
 
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Clock size={20} color="#1DBF73" />
-              <Text style={styles.sectionTitle}>Delivery Time</Text>
+              <View style={[styles.iconContainer, { backgroundColor: '#FEE2E2' }]}>
+                <Clock size={18} color="#EF4444" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }, TYPOGRAPHY.h4]}>Delivery Time</Text>
             </View>
             <View style={styles.deliveryContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.chip,
-                  !localFilters.maxDeliveryTime && styles.chipSelected,
-                ]}
-                onPress={() => updateFilter('maxDeliveryTime', undefined)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    !localFilters.maxDeliveryTime && styles.chipTextSelected,
-                  ]}
-                >
-                  Any Time
-                </Text>
-              </TouchableOpacity>
+              {renderFilterChip({
+                label: 'Any Time',
+                isSelected: !localFilters.maxDeliveryTime,
+                onPress: () => updateFilter('maxDeliveryTime', undefined),
+                icon: <Clock size={14} color={!localFilters.maxDeliveryTime ? COLORS.white : theme.colors.textTertiary} />,
+              })}
               {deliveryOptions.map((days) => (
-                <TouchableOpacity
-                  key={days}
-                  style={[
-                    styles.chip,
-                    localFilters.maxDeliveryTime === days && styles.chipSelected,
-                  ]}
-                  onPress={() => updateFilter('maxDeliveryTime', days)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      localFilters.maxDeliveryTime === days && styles.chipTextSelected,
-                    ]}
-                  >
-                    {days} day{days > 1 ? 's' : ''}
-                  </Text>
-                </TouchableOpacity>
+                <View key={days.toString()}>
+                  {renderFilterChip({
+                    label: `${days} day${days > 1 ? 's' : ''}`,
+                    isSelected: localFilters.maxDeliveryTime === days,
+                    onPress: () => updateFilter('maxDeliveryTime', days),
+                  })}
+                </View>
               ))}
             </View>
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-            <Text style={styles.resetButtonText}>Reset</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.applyButton} onPress={handleApply}>
-            <Text style={styles.applyButtonText}>Apply Filters</Text>
-          </TouchableOpacity>
+        <View style={[styles.footer, { borderTopColor: theme.colors.border, backgroundColor: theme.colors.background }]}>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.resetButton,
+              { 
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+              },
+              pressed && { opacity: 0.7 }
+            ]}
+            onPress={handleReset}
+            android_ripple={{ color: theme.colors.border }}
+          >
+            <Text style={[styles.resetButtonText, { color: theme.colors.textSecondary }, TYPOGRAPHY.bodySemibold]}>Reset</Text>
+          </Pressable>
+          <Pressable 
+            style={({ pressed }) => [
+              styles.applyButton,
+              {
+                backgroundColor: theme.colors.primary,
+                ...PLATFORM_STYLES.button,
+              },
+              pressed && Platform.OS === 'ios' && { opacity: 0.8 }
+            ]}
+            onPress={handleApply}
+            android_ripple={{ color: 'rgba(255,255,255,0.2)' }}
+          >
+            <Text style={[styles.applyButtonText, TYPOGRAPHY.bodySemibold]}>Apply Filters</Text>
+          </Pressable>
         </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </Animated.View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {},
+      android: {
+        marginTop: 60,
+        borderTopLeftRadius: BORDER_RADIUS.xxl,
+        borderTopRightRadius: BORDER_RADIUS.xxl,
+        overflow: 'hidden',
+      },
+      default: {
+        marginTop: 60,
+        borderTopLeftRadius: BORDER_RADIUS.xxl,
+        borderTopRightRadius: BORDER_RADIUS.xxl,
+        overflow: 'hidden',
+      },
+    }),
+  },
+  androidModal: {
+    ...SHADOWS.xl,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingBottom: SPACING.lg,
+  },
+  headerContent: {
+    alignItems: 'center',
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+  },
+  headerIndicator: {
+    width: 36,
+    height: 4,
+    backgroundColor: COLORS.gray300,
+    borderRadius: BORDER_RADIUS.full,
+    marginBottom: SPACING.lg,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    textAlign: 'center',
+    marginBottom: SPACING.sm,
   },
   closeButton: {
-    padding: 4,
+    position: 'absolute',
+    right: SPACING.xl,
+    top: SPACING.md + 20,
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flex: 1,
   },
   section: {
-    padding: 20,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xxl,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.lg,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: BORDER_RADIUS.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginLeft: 8,
+    flex: 1,
+  },
+  horizontalScroll: {
+    paddingRight: SPACING.xl,
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.sm,
   },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    marginRight: 8,
-    marginBottom: 8,
+  modernChip: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1.5,
+    marginRight: SPACING.sm,
+    marginBottom: SPACING.sm,
+    minHeight: 44,
+    justifyContent: 'center',
   },
-  chipSelected: {
-    backgroundColor: '#1DBF73',
-    borderColor: '#1DBF73',
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  chipText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+  chipIcon: {
+    marginRight: SPACING.xs,
   },
-  chipTextSelected: {
-    color: 'white',
+  modernChipText: {
+    ...TYPOGRAPHY.bodyMedium,
+    textAlign: 'center',
+  },
+  checkIcon: {
+    marginLeft: SPACING.xs,
   },
   ratingContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
-  ratingChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#f5f5f5',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    gap: 4,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    gap: SPACING.sm,
   },
   budgetContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.sm,
   },
   deliveryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.sm,
   },
   footer: {
     flexDirection: 'row',
-    padding: 20,
-    gap: 12,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.xl,
+    gap: SPACING.md,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
   },
   resetButton: {
     flex: 1,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#f5f5f5',
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    minHeight: 52,
   },
   resetButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    textAlign: 'center',
   },
   applyButton: {
     flex: 2,
-    paddingVertical: 16,
-    borderRadius: 12,
-    backgroundColor: '#1DBF73',
+    paddingVertical: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
   },
   applyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    color: COLORS.white,
+    textAlign: 'center',
   },
 });
