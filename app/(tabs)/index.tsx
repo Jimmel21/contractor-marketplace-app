@@ -275,10 +275,11 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   header: {
     paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
@@ -452,17 +453,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
   },
-});
+};
 
-// Add responsive styles for web
-if (isWeb) {
-  const webStyles = StyleSheet.create({
-    container: {
-      maxWidth: isTablet ? '100%' : 480,
-      alignSelf: 'center',
-      width: '100%',
-    },
-  });
-  
-  Object.assign(styles.container, webStyles.container);
-}
+const styles = StyleSheet.create(baseStyles);
