@@ -63,12 +63,12 @@ export default function ProfileScreen() {
   }, []);
 
   const toggleUserType = () => {
-    if (user && user.availableRoles.length > 1) {
+    if (user && user.availableRoles && user.availableRoles.length > 1) {
       updateUser({ type: user.type === 'contractor' ? 'client' : 'contractor' });
     }
   };
   
-  const canToggleRole = user && user.availableRoles.length > 1;
+  const canToggleRole = user && user.availableRoles && user.availableRoles.length > 1;
 
   const handleLogout = async () => {
     await logout();
