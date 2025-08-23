@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { Star, Clock } from 'lucide-react-native';
+import { Star, Clock, MapPin } from 'lucide-react-native';
 import { Service } from '@/types/service';
 import { router } from 'expo-router';
 
@@ -36,11 +36,17 @@ export default function ServiceCard({ service }: ServiceCardProps) {
           <Text style={styles.contractorName}>{service.contractor.name}</Text>
         </View>
         
-        <View style={styles.rating}>
-          <Star size={14} color="#FFD700" fill="#FFD700" />
-          <Text style={styles.ratingText}>
-            {service.rating} ({service.reviewCount})
-          </Text>
+        <View style={styles.metaRow}>
+          <View style={styles.rating}>
+            <Star size={14} color="#FFD700" fill="#FFD700" />
+            <Text style={styles.ratingText}>
+              {service.rating} ({service.reviewCount})
+            </Text>
+          </View>
+          <View style={styles.location}>
+            <MapPin size={12} color="#999" />
+            <Text style={styles.locationText}>{service.location}</Text>
+          </View>
         </View>
         
         <View style={styles.footer}>
@@ -112,10 +118,24 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
+  metaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+  },
+  location: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    fontSize: 12,
+    color: '#999',
+    marginLeft: 4,
   },
   ratingText: {
     fontSize: 14,

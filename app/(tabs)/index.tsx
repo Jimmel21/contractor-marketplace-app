@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -9,28 +9,60 @@ import {
   SafeAreaView,
   FlatList
 } from 'react-native';
-import { Search, Filter } from 'lucide-react-native';
+import { Search, Filter, MapPin, Star, DollarSign, Clock } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ServiceCard from '@/components/ServiceCard';
 import CategoryCard from '@/components/CategoryCard';
-import { mockServices } from '@/mocks/services';
+import FilterModal from '@/components/FilterModal';
+import { mockServices, getFilterOptions } from '@/mocks/services';
 import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
+import { ServiceFilters } from '@/types/service';
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ServiceFilters>({});
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const { user } = useAuth();
 
-  const filteredServices = mockServices.filter(service => {
-    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const filterOptions = useMemo(() => getFilterOptions(), []);
+
+  const filteredServices = useMemo(() => {
+    return mockServices.filter(service => {
+      const matchesSearch = searchQuery === '' || 
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.contractor.name.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = !selectedCategory || service.category === selectedCategory;
+      
+      const matchesLocation = !filters.location || service.location === filters.location;
+      
+      const matchesRating = !filters.minRating || service.rating >= filters.minRating;
+      
+      const matchesBudget = !filters.maxBudget || service.price <= filters.maxBudget;
+      
+      const matchesDelivery = !filters.maxDeliveryTime || service.deliveryTimeInDays <= filters.maxDeliveryTime;
+      
+      return matchesSearch && matchesCategory && matchesLocation && matchesRating && matchesBudget && matchesDelivery;
+    });
+  }, [searchQuery, selectedCategory, filters]);
 
   const featuredServices = filteredServices.filter(service => service.featured);
   const regularServices = filteredServices.filter(service => !service.featured);
+
+  const activeFiltersCount = Object.keys(filters).filter(key => filters[key as keyof ServiceFilters] !== undefined).length;
+
+  const handleApplyFilters = (newFilters: ServiceFilters) => {
+    setFilters(newFilters);
+  };
+
+  const clearAllFilters = () => {
+    setFilters({});
+    setSelectedCategory(null);
+    setSearchQuery('');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,8 +91,16 @@ export default function HomeScreen() {
               placeholderTextColor="#666"
             />
           </View>
-          <TouchableOpacity style={styles.filterButton}>
+          <TouchableOpacity 
+            style={[styles.filterButton, activeFiltersCount > 0 && styles.filterButtonActive]} 
+            onPress={() => setShowFilterModal(true)}
+          >
             <Filter size={20} color="white" />
+            {activeFiltersCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFiltersCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -85,12 +125,61 @@ export default function HomeScreen() {
           />
         </View>
 
-        {selectedCategory && (
-          <View style={styles.filterTag}>
-            <Text style={styles.filterText}>Filtered by: {selectedCategory}</Text>
-            <TouchableOpacity onPress={() => setSelectedCategory(null)}>
-              <Text style={styles.clearFilter}>Clear</Text>
-            </TouchableOpacity>
+        {(selectedCategory || activeFiltersCount > 0) && (
+          <View style={styles.activeFiltersContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.activeFiltersRow}>
+                {selectedCategory && (
+                  <View style={styles.activeFilterChip}>
+                    <Text style={styles.activeFilterText}>Category: {selectedCategory}</Text>
+                    <TouchableOpacity onPress={() => setSelectedCategory(null)}>
+                      <Text style={styles.removeFilter}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {filters.location && (
+                  <View style={styles.activeFilterChip}>
+                    <MapPin size={12} color="#1976D2" />
+                    <Text style={styles.activeFilterText}>{filters.location}</Text>
+                    <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, location: undefined }))}>
+                      <Text style={styles.removeFilter}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {filters.minRating && (
+                  <View style={styles.activeFilterChip}>
+                    <Star size={12} color="#1976D2" fill="#1976D2" />
+                    <Text style={styles.activeFilterText}>{filters.minRating}+</Text>
+                    <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, minRating: undefined }))}>
+                      <Text style={styles.removeFilter}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {filters.maxBudget && (
+                  <View style={styles.activeFilterChip}>
+                    <DollarSign size={12} color="#1976D2" />
+                    <Text style={styles.activeFilterText}>Under ${filters.maxBudget}</Text>
+                    <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, maxBudget: undefined }))}>
+                      <Text style={styles.removeFilter}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {filters.maxDeliveryTime && (
+                  <View style={styles.activeFilterChip}>
+                    <Clock size={12} color="#1976D2" />
+                    <Text style={styles.activeFilterText}>{filters.maxDeliveryTime} day{filters.maxDeliveryTime > 1 ? 's' : ''}</Text>
+                    <TouchableOpacity onPress={() => setFilters(prev => ({ ...prev, maxDeliveryTime: undefined }))}>
+                      <Text style={styles.removeFilter}>×</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {(selectedCategory || activeFiltersCount > 0) && (
+                  <TouchableOpacity style={styles.clearAllButton} onPress={clearAllFilters}>
+                    <Text style={styles.clearAllText}>Clear All</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </ScrollView>
           </View>
         )}
 
@@ -118,9 +207,20 @@ export default function HomeScreen() {
             <Text style={styles.emptyText}>
               Try adjusting your search or browse different categories
             </Text>
+            <TouchableOpacity style={styles.clearFiltersButton} onPress={clearAllFilters}>
+              <Text style={styles.clearFiltersButtonText}>Clear All Filters</Text>
+            </TouchableOpacity>
           </View>
         )}
       </ScrollView>
+
+      <FilterModal
+        visible={showFilterModal}
+        onClose={() => setShowFilterModal(false)}
+        filters={filters}
+        onApplyFilters={handleApplyFilters}
+        filterOptions={filterOptions}
+      />
     </SafeAreaView>
   );
 }
@@ -169,6 +269,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     padding: 12,
     borderRadius: 12,
+    position: 'relative',
+  },
+  filterButtonActive: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  filterBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#FF4444',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterBadgeText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
@@ -186,25 +306,44 @@ const styles = StyleSheet.create({
   categoriesList: {
     paddingRight: 20,
   },
-  filterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#E3F2FD',
+  activeFiltersContainer: {
     marginHorizontal: 20,
     marginBottom: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
   },
-  filterText: {
-    fontSize: 14,
+  activeFiltersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  activeFilterText: {
+    fontSize: 12,
     color: '#1976D2',
     fontWeight: '500',
   },
-  clearFilter: {
-    fontSize: 14,
+  removeFilter: {
+    fontSize: 16,
     color: '#1976D2',
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  clearAllButton: {
+    backgroundColor: '#FF4444',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  clearAllText: {
+    fontSize: 12,
+    color: 'white',
     fontWeight: '600',
   },
   emptyState: {
@@ -221,5 +360,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+    marginBottom: 20,
+  },
+  clearFiltersButton: {
+    backgroundColor: '#1DBF73',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  clearFiltersButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
