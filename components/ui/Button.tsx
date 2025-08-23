@@ -1,2 +1,199 @@
-import React from "react";
-import React from 'react';\nimport { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle } from 'react-native';\nimport { LinearGradient } from 'expo-linear-gradient';\nimport { useTheme } from '@/hooks/theme-store';\nimport { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, GRADIENTS } from '@/constants/design-system';\n\ntype ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'gradient';\ntype ButtonSize = 'sm' | 'md' | 'lg';\n\ninterface ButtonProps {\n  title: string;\n  onPress: () => void;\n  variant?: ButtonVariant;\n  size?: ButtonSize;\n  disabled?: boolean;\n  loading?: boolean;\n  fullWidth?: boolean;\n  icon?: React.ReactNode;\n  style?: ViewStyle;\n  textStyle?: TextStyle;\n}\n\nexport default function Button({\n  title,\n  onPress,\n  variant = 'primary',\n  size = 'md',\n  disabled = false,\n  loading = false,\n  fullWidth = false,\n  icon,\n  style,\n  textStyle,\n}: ButtonProps) {\n  const { theme } = useTheme();\n\n  const sizeStyles = {\n    sm: {\n      paddingHorizontal: SPACING.md,\n      paddingVertical: SPACING.sm,\n      minHeight: 36,\n    },\n    md: {\n      paddingHorizontal: SPACING.lg,\n      paddingVertical: SPACING.md,\n      minHeight: 44,\n    },\n    lg: {\n      paddingHorizontal: SPACING.xl,\n      paddingVertical: SPACING.lg,\n      minHeight: 52,\n    },\n  };\n\n  const getButtonStyle = (): ViewStyle => {\n    const baseStyle: ViewStyle = {\n      ...sizeStyles[size],\n      borderRadius: BORDER_RADIUS.lg,\n      flexDirection: 'row',\n      alignItems: 'center',\n      justifyContent: 'center',\n      ...SHADOWS.sm,\n    };\n\n    if (fullWidth) {\n      baseStyle.width = '100%';\n    }\n\n    if (disabled) {\n      baseStyle.opacity = 0.5;\n    }\n\n    switch (variant) {\n      case 'primary':\n        return {\n          ...baseStyle,\n          backgroundColor: theme.colors.primary,\n        };\n      case 'secondary':\n        return {\n          ...baseStyle,\n          backgroundColor: theme.colors.surface,\n          borderWidth: 1,\n          borderColor: theme.colors.border,\n        };\n      case 'outline':\n        return {\n          ...baseStyle,\n          backgroundColor: 'transparent',\n          borderWidth: 1.5,\n          borderColor: theme.colors.primary,\n        };\n      case 'ghost':\n        return {\n          ...baseStyle,\n          backgroundColor: 'transparent',\n          shadowOpacity: 0,\n          elevation: 0,\n        };\n      default:\n        return baseStyle;\n    }\n  };\n\n  const getTextStyle = (): TextStyle => {\n    const baseTextStyle: TextStyle = {\n      ...TYPOGRAPHY.bodyMedium,\n      textAlign: 'center',\n    };\n\n    switch (variant) {\n      case 'primary':\n      case 'gradient':\n        return {\n          ...baseTextStyle,\n          color: '#FFFFFF',\n        };\n      case 'secondary':\n        return {\n          ...baseTextStyle,\n          color: theme.colors.text,\n        };\n      case 'outline':\n      case 'ghost':\n        return {\n          ...baseTextStyle,\n          color: theme.colors.primary,\n        };\n      default:\n        return baseTextStyle;\n    }\n  };\n\n  const buttonContent = (\n    <>\n      {icon && <View style={styles.iconContainer}>{icon}</View>}\n      <Text style={[getTextStyle(), textStyle]}>\n        {loading ? 'Loading...' : title}\n      </Text>\n    </>\n  );\n\n  if (variant === 'gradient') {\n    return (\n      <TouchableOpacity\n        onPress={onPress}\n        disabled={disabled || loading}\n        activeOpacity={0.8}\n        style={[{ borderRadius: BORDER_RADIUS.lg }, style]}\n      >\n        <LinearGradient\n          colors={GRADIENTS.primary}\n          start={{ x: 0, y: 0 }}\n          end={{ x: 1, y: 0 }}\n          style={[getButtonStyle(), { backgroundColor: 'transparent' }]}\n        >\n          {buttonContent}\n        </LinearGradient>\n      </TouchableOpacity>\n    );\n  }\n\n  return (\n    <TouchableOpacity\n      style={[getButtonStyle(), style]}\n      onPress={onPress}\n      disabled={disabled || loading}\n      activeOpacity={0.8}\n    >\n      {buttonContent}\n    </TouchableOpacity>\n  );\n}\n\nconst styles = StyleSheet.create({\n  iconContainer: {\n    marginRight: SPACING.sm,\n  },\n});
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, TextStyle, ActivityIndicator } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '@/hooks/theme-store';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, GRADIENTS } from '@/constants/design-system';
+
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'gradient';
+type ButtonSize = 'sm' | 'md' | 'lg';
+
+interface ButtonProps {
+  title: string;
+  onPress: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+  loading?: boolean;
+  fullWidth?: boolean;
+  icon?: React.ReactNode;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
+}
+
+export default function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  fullWidth = false,
+  icon,
+  style,
+  textStyle,
+}: ButtonProps) {
+  const { theme } = useTheme();
+
+  const sizeStyles = {
+    sm: {
+      paddingHorizontal: SPACING.md,
+      paddingVertical: SPACING.sm,
+      minHeight: 36,
+    },
+    md: {
+      paddingHorizontal: SPACING.lg,
+      paddingVertical: SPACING.md,
+      minHeight: 44,
+    },
+    lg: {
+      paddingHorizontal: SPACING.xl,
+      paddingVertical: SPACING.lg,
+      minHeight: 52,
+    },
+  };
+
+  const getButtonStyle = (): ViewStyle => {
+    const baseStyle: ViewStyle = {
+      ...sizeStyles[size],
+      borderRadius: BORDER_RADIUS.lg,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...SHADOWS.sm,
+    };
+
+    if (fullWidth) {
+      baseStyle.width = '100%';
+    }
+
+    if (disabled || loading) {
+      baseStyle.opacity = 0.5;
+    }
+
+    switch (variant) {
+      case 'primary':
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.primary,
+        };
+      case 'secondary':
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.surface,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+        };
+      case 'outline':
+        return {
+          ...baseStyle,
+          backgroundColor: 'transparent',
+          borderWidth: 1,
+          borderColor: theme.colors.primary,
+        };
+      case 'ghost':
+        return {
+          ...baseStyle,
+          backgroundColor: 'transparent',
+        };
+      case 'gradient':
+        return baseStyle;
+      default:
+        return {
+          ...baseStyle,
+          backgroundColor: theme.colors.primary,
+        };
+    }
+  };
+
+  const getTextStyle = (): TextStyle => {
+    const baseTextStyle: TextStyle = {
+      ...TYPOGRAPHY.body,
+      fontWeight: '600',
+      textAlign: 'center',
+    };
+
+    switch (variant) {
+      case 'primary':
+      case 'gradient':
+        return {
+          ...baseTextStyle,
+          color: '#FFFFFF',
+        };
+      case 'secondary':
+        return {
+          ...baseTextStyle,
+          color: theme.colors.text,
+        };
+      case 'outline':
+        return {
+          ...baseTextStyle,
+          color: theme.colors.primary,
+        };
+      case 'ghost':
+        return {
+          ...baseTextStyle,
+          color: theme.colors.primary,
+        };
+      default:
+        return {
+          ...baseTextStyle,
+          color: '#FFFFFF',
+        };
+    }
+  };
+
+  const renderContent = () => (
+    <>
+      {loading && (
+        <ActivityIndicator
+          size="small"
+          color={variant === 'primary' || variant === 'gradient' ? '#FFFFFF' : theme.colors.primary}
+          style={{ marginRight: icon || title ? SPACING.xs : 0 }}
+        />
+      )}
+      {icon && !loading && (
+        <View style={{ marginRight: title ? SPACING.xs : 0 }}>
+          {icon}
+        </View>
+      )}
+      {title && (
+        <Text style={[getTextStyle(), textStyle]}>
+          {title}
+        </Text>
+      )}
+    </>
+  );
+
+  if (variant === 'gradient') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[getButtonStyle(), style]}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={GRADIENTS.primary}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[
+            StyleSheet.absoluteFillObject,
+            { borderRadius: BORDER_RADIUS.lg },
+          ]}
+        />
+        {renderContent()}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={[getButtonStyle(), style]}
+      activeOpacity={0.8}
+    >
+      {renderContent()}
+    </TouchableOpacity>
+  );
+}
