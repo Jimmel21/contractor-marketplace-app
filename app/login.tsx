@@ -9,18 +9,26 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react-native';
 import { useAuth } from '@/hooks/auth-store';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -37,7 +45,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView 
@@ -47,7 +55,7 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <LinearGradient
             colors={['#1DBF73', '#17A85C']}
-            style={styles.header}
+            style={[styles.header, { paddingTop: Math.max(insets.top + 20, 60) }]}
           >
             <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
@@ -117,14 +125,15 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   keyboardView: {
     flex: 1,
@@ -133,33 +142,33 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    padding: 40,
+    padding: isSmallScreen ? 24 : (isTablet ? 60 : 40),
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: 60,
   },
   title: {
-    fontSize: 32,
+    fontSize: isSmallScreen ? 28 : (isTablet ? 40 : 32),
     fontWeight: '700',
     color: 'white',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 20 : 16),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   form: {
     flex: 1,
-    padding: 20,
-    paddingTop: 40,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    paddingTop: isSmallScreen ? 24 : (isTablet ? 60 : 40),
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginBottom: 16,
+    borderRadius: isSmallScreen ? 10 : 12,
+    paddingHorizontal: isSmallScreen ? 12 : (isTablet ? 20 : 16),
+    paddingVertical: isSmallScreen ? 12 : (isTablet ? 20 : 16),
+    marginBottom: isSmallScreen ? 12 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -168,8 +177,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: isSmallScreen ? 8 : 12,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#1a1a1a',
   },
   loginButton: {
@@ -224,4 +233,6 @@ const styles = StyleSheet.create({
   loadingIcon: {
     marginRight: 8,
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

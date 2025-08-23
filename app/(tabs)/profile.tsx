@@ -13,8 +13,10 @@ import {
   Alert,
   ActionSheetIOS,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { 
   Star, 
@@ -42,9 +44,15 @@ import { useReviews } from '@/hooks/review-store';
 import { mockServices } from '@/mocks/services';
 import ServiceCard from '@/components/ServiceCard';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
+
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
   const { getReviewsForUser, getUserAverageRating, getUserReviewCount } = useReviews();
+  const insets = useSafeAreaInsets();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -403,35 +411,35 @@ export default function ProfileScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
         <Stack.Screen options={{ title: 'Profile' }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#1DBF73" />
           <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
         <Stack.Screen options={{ title: 'Profile' }} />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>User not found</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
       <Stack.Screen options={{ title: 'Profile' }} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <LinearGradient
           colors={['#1DBF73', '#17A85C']}
-          style={styles.header}
+          style={[styles.header, { paddingTop: Math.max(insets.top + 10, 30) }]}
         >
           <Image source={{ uri: user.avatar }} style={styles.avatar} />
           <Text style={styles.name}>{user.name}</Text>
@@ -972,41 +980,42 @@ export default function ProfileScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   content: {
     flex: 1,
   },
   header: {
     alignItems: 'center',
-    padding: 30,
+    padding: isSmallScreen ? 20 : (isTablet ? 40 : 30),
     paddingTop: 20,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: isSmallScreen ? 80 : (isTablet ? 120 : 100),
+    height: isSmallScreen ? 80 : (isTablet ? 120 : 100),
+    borderRadius: isSmallScreen ? 40 : (isTablet ? 60 : 50),
     marginBottom: 16,
     borderWidth: 4,
     borderColor: 'white',
   },
   name: {
-    fontSize: 24,
+    fontSize: isSmallScreen ? 20 : (isTablet ? 28 : 24),
     fontWeight: '700',
     color: 'white',
     marginBottom: 4,
   },
   email: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 24,
+    marginBottom: isSmallScreen ? 16 : 24,
   },
   stats: {
     flexDirection: 'row',
@@ -1028,10 +1037,10 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
   },
   section: {
-    padding: 20,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 18 : (isTablet ? 24 : 20),
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 16,
@@ -1044,8 +1053,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#8B5CF6',
     borderRadius: 25,
     padding: 4,
-    width: 280,
-    height: 50,
+    width: isSmallScreen ? 240 : (isTablet ? 320 : 280),
+    height: isSmallScreen ? 44 : (isTablet ? 56 : 50),
   },
   toggleOption: {
     flex: 1,
@@ -1430,7 +1439,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#666',
     fontWeight: '500',
   },
@@ -1441,7 +1450,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   errorText: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#666',
   },
   reviewsContainer: {
@@ -1678,4 +1687,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 8,
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

@@ -9,12 +9,19 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
+  Dimensions
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { User, Mail, Lock, Eye, EyeOff, Phone } from 'lucide-react-native';
 import { useAuth } from '@/hooks/auth-store';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
 
 export default function RegisterScreen() {
   const [name, setName] = useState('');
@@ -27,6 +34,7 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { register, isLoading } = useAuth();
+  const insets = useSafeAreaInsets();
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -99,7 +107,7 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 20) }]}>
       <Stack.Screen options={{ headerShown: false }} />
       
       <KeyboardAvoidingView 
@@ -109,7 +117,7 @@ export default function RegisterScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <LinearGradient
             colors={['#1DBF73', '#17A85C']}
-            style={styles.header}
+            style={[styles.header, { paddingTop: Math.max(insets.top + 20, 40) }]}
           >
             <Text style={styles.title}>Join Us</Text>
             <Text style={styles.subtitle}>Create your account</Text>
@@ -290,14 +298,15 @@ export default function RegisterScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   keyboardView: {
     flex: 1,
@@ -306,35 +315,35 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
-    padding: 40,
+    padding: isSmallScreen ? 24 : (isTablet ? 60 : 40),
     alignItems: 'center',
-    paddingTop: 60,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: isSmallScreen ? 28 : (isTablet ? 40 : 32),
     fontWeight: '700',
     color: 'white',
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 20 : 16),
     color: 'rgba(255, 255, 255, 0.9)',
   },
   form: {
     flex: 1,
-    padding: 20,
-    paddingTop: 30,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    paddingTop: isSmallScreen ? 20 : (isTablet ? 40 : 30),
   },
   fieldContainer: {
-    marginBottom: 16,
+    marginBottom: isSmallScreen ? 12 : 16,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    borderRadius: isSmallScreen ? 10 : 12,
+    paddingHorizontal: isSmallScreen ? 12 : (isTablet ? 20 : 16),
+    paddingVertical: isSmallScreen ? 12 : (isTablet ? 20 : 16),
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -355,15 +364,15 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
+    marginLeft: isSmallScreen ? 8 : 12,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#1a1a1a',
   },
   userTypeContainer: {
     marginBottom: 20,
   },
   userTypeLabel: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     fontWeight: '600',
     color: '#1a1a1a',
     marginBottom: 12,
@@ -375,8 +384,8 @@ const styles = StyleSheet.create({
   },
   userTypeButton: {
     flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: isSmallScreen ? 10 : 12,
+    paddingHorizontal: isSmallScreen ? 12 : 20,
     borderRadius: 8,
     borderWidth: 2,
     borderColor: '#E0E0E0',
@@ -387,7 +396,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1DBF73',
   },
   userTypeButtonText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
     fontWeight: '600',
     color: '#666',
   },
@@ -449,4 +458,6 @@ const styles = StyleSheet.create({
     color: '#1DBF73',
     fontWeight: '600',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);
