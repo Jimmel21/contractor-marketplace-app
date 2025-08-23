@@ -21,7 +21,11 @@ import {
 import { mockServices } from '@/mocks/services';
 
 export default function CheckoutScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, fromChat, chatId } = useLocalSearchParams<{ 
+    id: string;
+    fromChat?: string;
+    chatId?: string;
+  }>();
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -56,7 +60,12 @@ export default function CheckoutScreen() {
   };
 
   const handleReturnHome = () => {
-    router.replace('/');
+    if (fromChat === 'true' && chatId) {
+      // Return to chat and the chat will handle adding the system message
+      router.replace(`/chat/${chatId}?paymentComplete=${(service.price + service.price * 0.05 + 2.99).toFixed(2)}`);
+    } else {
+      router.replace('/');
+    }
   };
 
   if (paymentSuccess) {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,14 +10,27 @@ import {
   Platform,
   Image,
   SafeAreaView,
+  Modal,
+  ScrollView,
+  Alert,
 } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { Send } from 'lucide-react-native';
+import { Stack, useLocalSearchParams, router } from 'expo-router';
+import { Send, MoreHorizontal, DollarSign, CreditCard, X } from 'lucide-react-native';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Message } from '@/types/message';
 import { mockConversations } from '@/mocks/conversations';
+import { useAuth } from '@/hooks/auth-store';
 
 interface ChatMessage extends Message {
   isOwn: boolean;
+  type?: 'user' | 'system';
+}
+
+interface PaymentRequest {
+  serviceTitle: string;
+  amount: string;
+  notes: string;
 }
 
 const mockMessages: Message[] = [
@@ -64,10 +77,24 @@ const mockMessages: Message[] = [
 ];
 
 export default function ChatScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, paymentComplete } = useLocalSearchParams<{ 
+    id: string;
+    paymentComplete?: string;
+  }>();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>('');
+  const [showActionsSheet, setShowActionsSheet] = useState(false);
+  const [showPaymentRequestForm, setShowPaymentRequestForm] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState<PaymentRequest>({
+    serviceTitle: '',
+    amount: '',
+    notes: ''
+  });
   const flatListRef = useRef<FlatList>(null);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  
+  const snapPoints = useMemo(() => ['25%', '50%'], []);
   
   const conversation = mockConversations.find(c => c.id === id);
   const otherParticipant = conversation?.participants.find(p => p.id !== 'current');
@@ -76,9 +103,22 @@ export default function ChatScreen() {
     const chatMessages: ChatMessage[] = mockMessages.map(msg => ({
       ...msg,
       isOwn: msg.senderId === 'current',
+      type: 'user' as const,
     }));
     setMessages(chatMessages);
   }, []);
+
+  // Handle payment completion from checkout
+  useEffect(() => {
+    if (paymentComplete) {
+      const amount = parseFloat(paymentComplete);
+      if (!isNaN(amount)) {
+        addSystemMessage(`Payment of ${amount} placed in escrow.`);
+        // Clear the parameter to prevent duplicate messages
+        router.replace(`/chat/${id}`);
+      }
+    }
+  }, [paymentComplete, id]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -98,11 +138,71 @@ export default function ChatScreen() {
         timestamp: new Date().toISOString(),
         read: false,
         isOwn: true,
+        type: 'user',
       };
       
       setMessages(prev => [...prev, newMessage]);
       setInputText('');
     }
+  };
+
+  const addSystemMessage = (content: string) => {
+    const systemMessage: ChatMessage = {
+      id: Date.now().toString(),
+      senderId: 'system',
+      receiverId: 'system',
+      content,
+      timestamp: new Date().toISOString(),
+      read: true,
+      isOwn: false,
+      type: 'system',
+    };
+    
+    setMessages(prev => [...prev, systemMessage]);
+  };
+
+  const handleActionsPress = () => {
+    setShowActionsSheet(true);
+    bottomSheetRef.current?.expand();
+  };
+
+  const handleSheetClose = useCallback(() => {
+    setShowActionsSheet(false);
+    bottomSheetRef.current?.close();
+  }, []);
+
+  const handleRequestPayment = () => {
+    setShowPaymentRequestForm(true);
+    handleSheetClose();
+  };
+
+  const handleMakePayment = () => {
+    // Navigate to checkout with mock service data
+    const mockServiceId = 'service_1'; // In real app, this would come from conversation context
+    router.push(`/checkout?id=${mockServiceId}&fromChat=true&chatId=${id}`);
+    handleSheetClose();
+  };
+
+  const submitPaymentRequest = () => {
+    if (!paymentRequest.serviceTitle || !paymentRequest.amount) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    const amount = parseFloat(paymentRequest.amount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    // Add system message for payment request
+    addSystemMessage(
+      `Payment request sent: ${paymentRequest.serviceTitle} - ${amount}${paymentRequest.notes ? ` (${paymentRequest.notes})` : ''}`
+    );
+
+    // Reset form
+    setPaymentRequest({ serviceTitle: '', amount: '', notes: '' });
+    setShowPaymentRequestForm(false);
   };
 
   const formatMessageTime = (timestamp: string) => {
@@ -111,6 +211,19 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => {
+    if (item.type === 'system') {
+      return (
+        <View style={styles.systemMessageContainer}>
+          <View style={styles.systemMessageBubble}>
+            <Text style={styles.systemMessageText}>{item.content}</Text>
+            <Text style={styles.systemMessageTime}>
+              {formatMessageTime(item.timestamp)}
+            </Text>
+          </View>
+        </View>
+      );
+    }
+
     return (
       <View style={[
         styles.messageContainer,
@@ -145,57 +258,168 @@ export default function ChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen 
-        options={{ 
-          title: otherParticipant?.name || 'Chat',
-          headerBackTitle: 'Messages'
-        }} 
-      />
-      
-      <KeyboardAvoidingView 
-        style={styles.container} 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMessage}
-          style={styles.messagesList}
-          contentContainerStyle={styles.messagesContent}
-          showsVerticalScrollIndicator={false}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen 
+          options={{ 
+            title: otherParticipant?.name || 'Chat',
+            headerBackTitle: 'Messages'
+          }} 
         />
         
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="Type a message..."
-            multiline
-            maxLength={500}
-            onSubmitEditing={sendMessage}
-            blurOnSubmit={false}
+        <KeyboardAvoidingView 
+          style={styles.container} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMessage}
+            style={styles.messagesList}
+            contentContainerStyle={styles.messagesContent}
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           />
-          <TouchableOpacity 
-            style={[
-              styles.sendButton,
-              inputText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
-            ]}
-            onPress={sendMessage}
-            disabled={!inputText.trim()}
-          >
-            <Send 
-              size={20} 
-              color={inputText.trim() ? 'white' : '#999'} 
+          
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              value={inputText}
+              onChangeText={setInputText}
+              placeholder="Type a message..."
+              multiline
+              maxLength={500}
+              onSubmitEditing={sendMessage}
+              blurOnSubmit={false}
             />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <TouchableOpacity 
+              style={[
+                styles.sendButton,
+                inputText.trim() ? styles.sendButtonActive : styles.sendButtonInactive
+              ]}
+              onPress={sendMessage}
+              disabled={!inputText.trim()}
+            >
+              <Send 
+                size={20} 
+                color={inputText.trim() ? 'white' : '#999'} 
+              />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+
+        {/* Floating Actions Button */}
+        <TouchableOpacity 
+          style={styles.actionsButton}
+          onPress={handleActionsPress}
+        >
+          <MoreHorizontal size={24} color="white" />
+        </TouchableOpacity>
+
+        {/* Bottom Sheet */}
+        {showActionsSheet && (
+          <BottomSheet
+            ref={bottomSheetRef}
+            index={0}
+            snapPoints={snapPoints}
+            onClose={handleSheetClose}
+            enablePanDownToClose
+          >
+            <BottomSheetView style={styles.bottomSheetContent}>
+              <Text style={styles.bottomSheetTitle}>Actions</Text>
+              
+              {user?.type === 'contractor' && (
+                <TouchableOpacity 
+                  style={styles.actionItem}
+                  onPress={handleRequestPayment}
+                >
+                  <DollarSign size={24} color="#1DBF73" />
+                  <View style={styles.actionTextContainer}>
+                    <Text style={styles.actionTitle}>Request Payment</Text>
+                    <Text style={styles.actionSubtitle}>Send a payment request to client</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              
+              {user?.type === 'client' && (
+                <TouchableOpacity 
+                  style={styles.actionItem}
+                  onPress={handleMakePayment}
+                >
+                  <CreditCard size={24} color="#1DBF73" />
+                  <View style={styles.actionTextContainer}>
+                    <Text style={styles.actionTitle}>Make Payment (Escrow)</Text>
+                    <Text style={styles.actionSubtitle}>Pay for service securely</Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+            </BottomSheetView>
+          </BottomSheet>
+        )}
+
+        {/* Payment Request Form Modal */}
+        <Modal
+          visible={showPaymentRequestForm}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                onPress={() => setShowPaymentRequestForm(false)}
+                style={styles.modalCloseButton}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Request Payment</Text>
+              <TouchableOpacity 
+                onPress={submitPaymentRequest}
+                style={styles.modalSubmitButton}
+              >
+                <Text style={styles.modalSubmitText}>Send</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Service Title *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={paymentRequest.serviceTitle}
+                  onChangeText={(text) => setPaymentRequest(prev => ({ ...prev, serviceTitle: text }))}
+                  placeholder="Enter service title"
+                />
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Amount *</Text>
+                <TextInput
+                  style={styles.formInput}
+                  value={paymentRequest.amount}
+                  onChangeText={(text) => setPaymentRequest(prev => ({ ...prev, amount: text }))}
+                  placeholder="0.00"
+                  keyboardType="numeric"
+                />
+              </View>
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.formLabel}>Notes (Optional)</Text>
+                <TextInput
+                  style={[styles.formInput, styles.formTextArea]}
+                  value={paymentRequest.notes}
+                  onChangeText={(text) => setPaymentRequest(prev => ({ ...prev, notes: text }))}
+                  placeholder="Add any additional notes..."
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 }
 
@@ -306,5 +530,148 @@ const styles = StyleSheet.create({
   },
   sendButtonInactive: {
     backgroundColor: '#f0f0f0',
+  },
+  systemMessageContainer: {
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  systemMessageBubble: {
+    backgroundColor: '#e9ecef',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    maxWidth: '80%',
+  },
+  systemMessageText: {
+    fontSize: 14,
+    color: '#6c757d',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  systemMessageTime: {
+    fontSize: 10,
+    color: '#adb5bd',
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  actionsButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#1DBF73',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  bottomSheetContent: {
+    flex: 1,
+    padding: 20,
+  },
+  bottomSheetTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  actionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  actionTextContainer: {
+    marginLeft: 16,
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  actionSubtitle: {
+    fontSize: 14,
+    color: '#666',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  modalSubmitButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#1DBF73',
+    borderRadius: 8,
+  },
+  modalSubmitText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  formGroup: {
+    marginBottom: 20,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  formInput: {
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: 'white',
+  },
+  formTextArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
 });
