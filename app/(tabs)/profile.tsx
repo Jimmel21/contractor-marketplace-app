@@ -45,6 +45,8 @@ export default function ProfileScreen() {
     avatar: ''
   });
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [urlInputVisible, setUrlInputVisible] = useState(false);
+  const [urlInputValue, setUrlInputValue] = useState('');
 
   const toggleUserType = () => {
     if (user) {
@@ -189,23 +191,36 @@ export default function ProfileScreen() {
   };
 
   const showUrlInput = () => {
-    Alert.prompt(
-      'Enter Image URL',
-      'Please enter the URL of your profile image',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'OK',
-          onPress: (url) => {
-            if (url && url.trim()) {
-              setEditForm(prev => ({ ...prev, avatar: url.trim() }));
-            }
+    if (Platform.OS === 'web') {
+      setUrlInputValue(editForm.avatar);
+      setUrlInputVisible(true);
+    } else {
+      Alert.prompt(
+        'Enter Image URL',
+        'Please enter the URL of your profile image',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'OK',
+            onPress: (url) => {
+              if (url && url.trim()) {
+                setEditForm(prev => ({ ...prev, avatar: url.trim() }));
+              }
+            },
           },
-        },
-      ],
-      'plain-text',
-      editForm.avatar
-    );
+        ],
+        'plain-text',
+        editForm.avatar
+      );
+    }
+  };
+
+  const handleUrlSubmit = () => {
+    if (urlInputValue && urlInputValue.trim()) {
+      setEditForm(prev => ({ ...prev, avatar: urlInputValue.trim() }));
+    }
+    setUrlInputVisible(false);
+    setUrlInputValue('');
   };
 
   const userServices = mockServices.filter(service => 
@@ -439,6 +454,50 @@ export default function ProfileScreen() {
             </View>
           </ScrollView>
         </SafeAreaView>
+      </Modal>
+      
+      <Modal
+        visible={urlInputVisible}
+        animationType="fade"
+        transparent
+      >
+        <View style={styles.urlModalOverlay}>
+          <View style={styles.urlModalContainer}>
+            <Text style={styles.urlModalTitle}>Enter Image URL</Text>
+            <Text style={styles.urlModalSubtitle}>
+              Please enter the URL of your profile image
+            </Text>
+            
+            <TextInput
+              style={styles.urlInput}
+              value={urlInputValue}
+              onChangeText={setUrlInputValue}
+              placeholder="https://example.com/image.jpg"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            
+            <View style={styles.urlModalButtons}>
+              <TouchableOpacity 
+                style={[styles.urlModalButton, styles.urlCancelButton]}
+                onPress={() => {
+                  setUrlInputVisible(false);
+                  setUrlInputValue('');
+                }}
+              >
+                <Text style={styles.urlCancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.urlModalButton, styles.urlSubmitButton]}
+                onPress={handleUrlSubmit}
+              >
+                <Text style={styles.urlSubmitButtonText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -777,6 +836,75 @@ const styles = StyleSheet.create({
   secondaryPhotoButtonText: {
     color: '#1DBF73',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  urlModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  urlModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  urlModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  urlModalSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  urlInput: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 20,
+  },
+  urlModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  urlModalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  urlCancelButton: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  urlSubmitButton: {
+    backgroundColor: '#1DBF73',
+  },
+  urlCancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  urlSubmitButtonText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
