@@ -10,7 +10,7 @@ interface ServiceCardProps {
 
 export default function ServiceCard({ service }: ServiceCardProps) {
   const handlePress = () => {
-    router.push(`/service/${service.id}`);
+    router.push(`/service-detail?id=${service.id}`);
   };
 
   return (
