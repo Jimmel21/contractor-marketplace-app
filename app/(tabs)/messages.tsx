@@ -1,16 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
-  SafeAreaView 
+  SafeAreaView,
+  ActivityIndicator
 } from 'react-native';
 import { Stack } from 'expo-router';
 import ConversationCard from '@/components/ConversationCard';
 import { mockConversations } from '@/mocks/conversations';
 
 export default function MessagesScreen() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Messages' }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1DBF73" />
+          <Text style={styles.loadingText}>Loading conversations...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen options={{ title: 'Messages' }} />
@@ -57,5 +79,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
   },
 });

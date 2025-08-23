@@ -7,9 +7,11 @@ import {
   TextInput, 
   TouchableOpacity,
   SafeAreaView,
-  FlatList
+  FlatList,
+  ActivityIndicator
 } from 'react-native';
-import { Search, Filter, MapPin, Star, DollarSign, Clock } from 'lucide-react-native';
+import { Search, Filter, MapPin, Star, DollarSign, Clock, Plus } from 'lucide-react-native';
+import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import ServiceCard from '@/components/ServiceCard';
 import CategoryCard from '@/components/CategoryCard';
@@ -24,7 +26,15 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [filters, setFilters] = useState<ServiceFilters>({});
   const [showFilterModal, setShowFilterModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filterOptions = useMemo(() => getFilterOptions(), []);
 
@@ -63,6 +73,21 @@ export default function HomeScreen() {
     setSelectedCategory(null);
     setSearchQuery('');
   };
+
+  const handleCreateService = () => {
+    router.push('/create-service');
+  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1DBF73" />
+          <Text style={styles.loadingText}>Loading services...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -221,6 +246,16 @@ export default function HomeScreen() {
         onApplyFilters={handleApplyFilters}
         filterOptions={filterOptions}
       />
+
+      {user?.type === 'contractor' && (
+        <TouchableOpacity 
+          style={styles.floatingButton} 
+          onPress={handleCreateService}
+          activeOpacity={0.8}
+        >
+          <Plus size={24} color="white" />
+        </TouchableOpacity>
+      )}
     </SafeAreaView>
   );
 }
@@ -372,5 +407,36 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  floatingButton: {
+    position: 'absolute',
+    bottom: 90,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#1DBF73',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
   },
 });

@@ -12,7 +12,8 @@ import {
   TextInput,
   Alert,
   ActionSheetIOS,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { 
@@ -50,6 +51,14 @@ export default function ProfileScreen() {
   const [urlInputVisible, setUrlInputVisible] = useState(false);
   const [urlInputValue, setUrlInputValue] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleUserType = () => {
     if (user) {
@@ -322,10 +331,25 @@ export default function ProfileScreen() {
     user?.type === 'contractor' && service.contractor.id === user.id
   );
 
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Profile' }} />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#1DBF73" />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   if (!user) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text>Loading...</Text>
+        <Stack.Screen options={{ title: 'Profile' }} />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>User not found</Text>
+        </View>
       </SafeAreaView>
     );
   }
@@ -1052,5 +1076,27 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#666',
   },
 });
