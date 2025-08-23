@@ -8,8 +8,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   FlatList,
-  ActivityIndicator
+  ActivityIndicator,
+  Dimensions,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, Filter, MapPin, Star, DollarSign, Clock, Plus } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +24,11 @@ import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
 import { ServiceFilters } from '@/types/service';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
+
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -28,6 +36,7 @@ export default function HomeScreen() {
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,12 +102,12 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container}>
       <LinearGradient
         colors={['#1DBF73', '#17A85C']}
-        style={styles.header}
+        style={[styles.header, { paddingTop: Math.max(insets.top, 10) }]}
       >
-        <Text style={styles.greeting}>
+        <Text style={[styles.greeting, { fontSize: isSmallScreen ? 20 : (isTablet ? 28 : 24) }]}>
           Hello, {user?.name?.split(' ')[0] || 'there'}! 👋
         </Text>
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16) }]}>
           {user?.type === 'contractor' 
             ? 'Ready to showcase your skills?' 
             : 'Find the perfect service for your needs'
@@ -249,11 +258,17 @@ export default function HomeScreen() {
 
       {user?.type === 'contractor' && (
         <TouchableOpacity 
-          style={styles.floatingButton} 
+          style={[styles.floatingButton, { 
+            bottom: Platform.OS === 'ios' ? 90 + insets.bottom : 90,
+            right: isSmallScreen ? 16 : 20,
+            width: isSmallScreen ? 50 : 56,
+            height: isSmallScreen ? 50 : 56,
+            borderRadius: isSmallScreen ? 25 : 28
+          }]} 
           onPress={handleCreateService}
           activeOpacity={0.8}
         >
-          <Plus size={24} color="white" />
+          <Plus size={isSmallScreen ? 20 : 24} color="white" />
         </TouchableOpacity>
       )}
     </SafeAreaView>
@@ -266,7 +281,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   header: {
-    padding: 20,
+    paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    paddingBottom: isSmallScreen ? 16 : 20,
     paddingTop: 10,
   },
   greeting: {
@@ -278,7 +294,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 20,
+    marginBottom: isSmallScreen ? 16 : 20,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -289,21 +305,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginRight: 12,
+    borderRadius: isSmallScreen ? 10 : 12,
+    paddingHorizontal: isSmallScreen ? 12 : 16,
+    paddingVertical: isSmallScreen ? 10 : 12,
+    marginRight: isSmallScreen ? 8 : 12,
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#1a1a1a',
   },
   filterButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: 12,
-    borderRadius: 12,
+    padding: isSmallScreen ? 10 : 12,
+    borderRadius: isSmallScreen ? 10 : 12,
     position: 'relative',
   },
   filterButtonActive: {
@@ -329,20 +345,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   section: {
-    padding: 20,
+    paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
+    paddingVertical: isSmallScreen ? 12 : 20,
     paddingBottom: 0,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 18 : (isTablet ? 24 : 20),
     fontWeight: '700',
     color: '#1a1a1a',
-    marginBottom: 16,
+    marginBottom: isSmallScreen ? 12 : 16,
   },
   categoriesList: {
-    paddingRight: 20,
+    paddingRight: isSmallScreen ? 16 : 20,
   },
   activeFiltersContainer: {
-    marginHorizontal: 20,
+    marginHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
     marginBottom: 10,
   },
   activeFiltersRow: {
@@ -354,13 +371,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E3F2FD',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: isSmallScreen ? 8 : 12,
+    paddingVertical: isSmallScreen ? 4 : 6,
+    borderRadius: isSmallScreen ? 12 : 16,
     gap: 4,
   },
   activeFilterText: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
     color: '#1976D2',
     fontWeight: '500',
   },
@@ -372,30 +389,31 @@ const styles = StyleSheet.create({
   },
   clearAllButton: {
     backgroundColor: '#FF4444',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: isSmallScreen ? 8 : 12,
+    paddingVertical: isSmallScreen ? 4 : 6,
+    borderRadius: isSmallScreen ? 12 : 16,
   },
   clearAllText: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
     color: 'white',
     fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
-    padding: 40,
+    padding: isSmallScreen ? 24 : (isTablet ? 60 : 40),
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '600',
     color: '#1a1a1a',
     marginBottom: 8,
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
     color: '#666',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: isSmallScreen ? 16 : 20,
+    maxWidth: isTablet ? 400 : '100%',
   },
   clearFiltersButton: {
     backgroundColor: '#1DBF73',
@@ -416,17 +434,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     color: '#666',
     fontWeight: '500',
   },
   floatingButton: {
     position: 'absolute',
-    bottom: 90,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     backgroundColor: '#1DBF73',
     justifyContent: 'center',
     alignItems: 'center',
@@ -440,3 +453,16 @@ const styles = StyleSheet.create({
     shadowRadius: 4.65,
   },
 });
+
+// Add responsive styles for web
+if (isWeb) {
+  const webStyles = StyleSheet.create({
+    container: {
+      maxWidth: isTablet ? '100%' : 480,
+      alignSelf: 'center',
+      width: '100%',
+    },
+  });
+  
+  Object.assign(styles.container, webStyles.container);
+}

@@ -1,8 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Star, Clock, MapPin } from 'lucide-react-native';
 import { Service } from '@/types/service';
 import { router } from 'expo-router';
+
+const { width: screenWidth } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
 
 interface ServiceCardProps {
   service: Service;
@@ -64,8 +68,8 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: isSmallScreen ? 10 : 12,
+    marginBottom: isSmallScreen ? 12 : 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -75,7 +79,7 @@ const styles = StyleSheet.create({
   },
   image: {
     width: '100%',
-    height: 160,
+    height: isSmallScreen ? 140 : (isTablet ? 200 : 160),
     backgroundColor: '#f0f0f0',
   },
   featuredBadge: {
@@ -93,14 +97,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   content: {
-    padding: 16,
+    padding: isSmallScreen ? 12 : (isTablet ? 20 : 16),
   },
   title: {
-    fontSize: 16,
+    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
     fontWeight: '600',
     color: '#1a1a1a',
-    marginBottom: 12,
-    lineHeight: 22,
+    marginBottom: isSmallScreen ? 8 : 12,
+    lineHeight: isSmallScreen ? 18 : (isTablet ? 24 : 22),
   },
   contractorInfo: {
     flexDirection: 'row',
@@ -108,13 +112,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   avatar: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: isSmallScreen ? 20 : 24,
+    height: isSmallScreen ? 20 : 24,
+    borderRadius: isSmallScreen ? 10 : 12,
     marginRight: 8,
   },
   contractorName: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
     color: '#666',
     fontWeight: '500',
   },
@@ -133,12 +137,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   locationText: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
     color: '#999',
     marginLeft: 4,
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
     color: '#666',
     marginLeft: 4,
     fontWeight: '500',
@@ -153,12 +157,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deliveryText: {
-    fontSize: 14,
+    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
     color: '#666',
     marginLeft: 4,
   },
   price: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 20 : 18),
     fontWeight: '700',
     color: '#1DBF73',
   },

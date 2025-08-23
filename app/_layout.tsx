@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from "@/hooks/auth-store";
 import { ReviewProvider } from "@/hooks/review-store";
 import { PaymentProvider } from "@/hooks/payment-store";
@@ -30,16 +31,18 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ReviewProvider>
-          <PaymentProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <RootLayoutNav />
-            </GestureHandlerRootView>
-          </PaymentProvider>
-        </ReviewProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ReviewProvider>
+            <PaymentProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <RootLayoutNav />
+              </GestureHandlerRootView>
+            </PaymentProvider>
+          </ReviewProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

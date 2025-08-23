@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { ServiceCategory } from '@/types/service';
 import { 
   Code, 
@@ -9,6 +9,10 @@ import {
   Video, 
   Camera 
 } from 'lucide-react-native';
+
+const { width: screenWidth } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
 
 interface CategoryCardProps {
   category: ServiceCategory;
@@ -33,7 +37,7 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
       onPress={onPress}
     >
       <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
-        <IconComponent size={24} color="white" />
+        <IconComponent size={isSmallScreen ? 18 : (isTablet ? 28 : 24)} color="white" />
       </View>
       <Text style={styles.name}>{category.name}</Text>
     </TouchableOpacity>
@@ -42,24 +46,24 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 120,
-    height: 100,
-    borderRadius: 12,
-    padding: 16,
+    width: isSmallScreen ? 100 : (isTablet ? 140 : 120),
+    height: isSmallScreen ? 80 : (isTablet ? 120 : 100),
+    borderRadius: isSmallScreen ? 10 : 12,
+    padding: isSmallScreen ? 12 : (isTablet ? 20 : 16),
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: isSmallScreen ? 8 : 12,
   },
   iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: isSmallScreen ? 36 : (isTablet ? 56 : 48),
+    height: isSmallScreen ? 36 : (isTablet ? 56 : 48),
+    borderRadius: isSmallScreen ? 18 : (isTablet ? 28 : 24),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: isSmallScreen ? 6 : 8,
   },
   name: {
-    fontSize: 12,
+    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
     fontWeight: '600',
     color: '#1a1a1a',
     textAlign: 'center',
