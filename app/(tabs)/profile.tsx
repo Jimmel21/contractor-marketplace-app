@@ -30,7 +30,9 @@ import {
   DollarSign,
   ImageIcon,
   Upload,
-  Navigation
+  Navigation,
+  Users,
+  Check
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
@@ -54,6 +56,9 @@ export default function ProfileScreen() {
   const [urlInputValue, setUrlInputValue] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [roleModalVisible, setRoleModalVisible] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState<('contractor' | 'client')[]>([]);
+  const [selectedActiveRole, setSelectedActiveRole] = useState<'contractor' | 'client'>('client');
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -62,6 +67,13 @@ export default function ProfileScreen() {
     return () => clearTimeout(timer);
   }, []);
 
+  React.useEffect(() => {
+    if (user) {
+      setSelectedRoles(user.availableRoles || [user.type]);
+      setSelectedActiveRole(user.type);
+    }
+  }, [user]);
+
   const toggleUserType = () => {
     if (user && user.availableRoles && user.availableRoles.length > 1) {
       updateUser({ type: user.type === 'contractor' ? 'client' : 'contractor' });
@@ -69,6 +81,56 @@ export default function ProfileScreen() {
   };
   
   const canToggleRole = user && user.availableRoles && user.availableRoles.length > 1;
+
+  const openRoleModal = () => {
+    if (user) {
+      setSelectedRoles(user.availableRoles || [user.type]);
+      setSelectedActiveRole(user.type);
+    }
+    setRoleModalVisible(true);
+  };
+
+  const handleRoleToggle = (role: 'contractor' | 'client') => {
+    setSelectedRoles(prev => {
+      if (prev.includes(role)) {
+        // Don't allow removing the last role
+        if (prev.length === 1) {
+          Alert.alert('Error', 'You must have at least one role selected.');
+          return prev;
+        }
+        const newRoles = prev.filter(r => r !== role);
+        // If removing the active role, switch to the remaining one
+        if (selectedActiveRole === role && newRoles.length > 0) {
+          setSelectedActiveRole(newRoles[0]);
+        }
+        return newRoles;
+      } else {
+        return [...prev, role];
+      }
+    });
+  };
+
+  const handleSaveRoles = async () => {
+    if (!user || selectedRoles.length === 0) {
+      Alert.alert('Error', 'You must have at least one role selected.');
+      return;
+    }
+
+    // Ensure the active role is in the selected roles
+    if (!selectedRoles.includes(selectedActiveRole)) {
+      setSelectedActiveRole(selectedRoles[0]);
+    }
+
+    const finalActiveRole = selectedRoles.includes(selectedActiveRole) ? selectedActiveRole : selectedRoles[0];
+
+    await updateUser({
+      availableRoles: selectedRoles,
+      type: finalActiveRole
+    });
+
+    setRoleModalVisible(false);
+    Alert.alert('Success', 'Your role settings have been updated!');
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -574,6 +636,19 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
           
+          <TouchableOpacity 
+            style={styles.actionCard}
+            onPress={openRoleModal}
+          >
+            <Users size={24} color="#666" />
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Role Settings</Text>
+              <Text style={styles.actionSubtitle}>
+                Manage your contractor and client roles
+              </Text>
+            </View>
+          </TouchableOpacity>
+          
           {user.type === 'contractor' && (
             <TouchableOpacity 
               style={styles.actionCard}
@@ -756,6 +831,132 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+      </Modal>
+      
+      <Modal
+        visible={roleModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setRoleModalVisible(false)}>
+              <X size={24} color="#666" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Role Settings</Text>
+            <TouchableOpacity onPress={handleSaveRoles}>
+              <Text style={styles.saveButton}>Save</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Available Roles</Text>
+              <Text style={styles.formSubtitle}>
+                Select which roles you want to have access to on the platform
+              </Text>
+              
+              <View style={styles.roleOptions}>
+                <TouchableOpacity 
+                  style={[
+                    styles.roleOption,
+                    selectedRoles.includes('client') && styles.roleOptionSelected
+                  ]}
+                  onPress={() => handleRoleToggle('client')}
+                >
+                  <View style={styles.roleOptionContent}>
+                    <View style={styles.roleOptionHeader}>
+                      <Users size={24} color={selectedRoles.includes('client') ? '#1DBF73' : '#666'} />
+                      <Text style={[
+                        styles.roleOptionTitle,
+                        selectedRoles.includes('client') && styles.roleOptionTitleSelected
+                      ]}>Client</Text>
+                      {selectedRoles.includes('client') && (
+                        <Check size={20} color="#1DBF73" />
+                      )}
+                    </View>
+                    <Text style={styles.roleOptionDescription}>
+                      Hire contractors and book services
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.roleOption,
+                    selectedRoles.includes('contractor') && styles.roleOptionSelected
+                  ]}
+                  onPress={() => handleRoleToggle('contractor')}
+                >
+                  <View style={styles.roleOptionContent}>
+                    <View style={styles.roleOptionHeader}>
+                      <Briefcase size={24} color={selectedRoles.includes('contractor') ? '#1DBF73' : '#666'} />
+                      <Text style={[
+                        styles.roleOptionTitle,
+                        selectedRoles.includes('contractor') && styles.roleOptionTitleSelected
+                      ]}>Contractor</Text>
+                      {selectedRoles.includes('contractor') && (
+                        <Check size={20} color="#1DBF73" />
+                      )}
+                    </View>
+                    <Text style={styles.roleOptionDescription}>
+                      Offer services and earn money
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {selectedRoles.length > 1 && (
+              <View style={styles.formSection}>
+                <Text style={styles.formLabel}>Active Role</Text>
+                <Text style={styles.formSubtitle}>
+                  Choose which role you want to use by default
+                </Text>
+                
+                <View style={styles.activeRoleOptions}>
+                  {selectedRoles.map((role) => (
+                    <TouchableOpacity 
+                      key={role}
+                      style={[
+                        styles.activeRoleOption,
+                        selectedActiveRole === role && styles.activeRoleOptionSelected
+                      ]}
+                      onPress={() => setSelectedActiveRole(role)}
+                    >
+                      <View style={styles.activeRoleRadio}>
+                        {selectedActiveRole === role && (
+                          <View style={styles.activeRoleRadioSelected} />
+                        )}
+                      </View>
+                      <Text style={[
+                        styles.activeRoleText,
+                        selectedActiveRole === role && styles.activeRoleTextSelected
+                      ]}>
+                        {role === 'contractor' ? 'Contractor' : 'Client'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+            
+            <View style={styles.roleInfoSection}>
+              <Text style={styles.roleInfoTitle}>Role Information</Text>
+              <View style={styles.roleInfoCard}>
+                <Text style={styles.roleInfoText}>
+                  • You can switch between roles anytime from your profile
+                </Text>
+                <Text style={styles.roleInfoText}>
+                  • Each role has different features and capabilities
+                </Text>
+                <Text style={styles.roleInfoText}>
+                  • You must have at least one role selected
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -1344,5 +1545,111 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     lineHeight: 20,
+  },
+  formSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  roleOptions: {
+    gap: 12,
+  },
+  roleOption: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  roleOptionSelected: {
+    borderColor: '#1DBF73',
+    backgroundColor: '#f8fff9',
+  },
+  roleOptionContent: {
+    flex: 1,
+  },
+  roleOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  roleOptionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    flex: 1,
+  },
+  roleOptionTitleSelected: {
+    color: '#1DBF73',
+  },
+  roleOptionDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  activeRoleOptions: {
+    gap: 12,
+  },
+  activeRoleOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  activeRoleOptionSelected: {
+    borderColor: '#1DBF73',
+    backgroundColor: '#f8fff9',
+  },
+  activeRoleRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeRoleRadioSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#1DBF73',
+  },
+  activeRoleText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1a1a1a',
+  },
+  activeRoleTextSelected: {
+    color: '#1DBF73',
+    fontWeight: '600',
+  },
+  roleInfoSection: {
+    marginTop: 24,
+  },
+  roleInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  roleInfoCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  roleInfoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 8,
   },
 });
