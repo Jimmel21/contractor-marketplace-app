@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -7,7 +7,10 @@ import {
   TouchableOpacity, 
   Image,
   SafeAreaView,
-  Switch
+  Switch,
+  Modal,
+  TextInput,
+  Alert
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { 
@@ -17,13 +20,25 @@ import {
   Settings, 
   MessageCircle,
   Award,
-  Briefcase
+  Briefcase,
+  Edit3,
+  X,
+  Camera,
+  DollarSign
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/hooks/auth-store';
+import { mockServices } from '@/mocks/services';
+import ServiceCard from '@/components/ServiceCard';
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editForm, setEditForm] = useState({
+    bio: '',
+    location: '',
+    avatar: ''
+  });
 
   const toggleUserType = () => {
     if (user) {
@@ -34,6 +49,34 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     await logout();
   };
+
+  const openEditModal = () => {
+    if (user) {
+      setEditForm({
+        bio: user.bio || '',
+        location: user.location || '',
+        avatar: user.avatar || ''
+      });
+    }
+    setEditModalVisible(true);
+  };
+
+  const handleSaveProfile = () => {
+    if (!user) return;
+    
+    updateUser({
+      bio: editForm.bio,
+      location: editForm.location,
+      avatar: editForm.avatar
+    });
+    
+    setEditModalVisible(false);
+    Alert.alert('Success', 'Profile updated successfully!');
+  };
+
+  const userServices = mockServices.filter(service => 
+    user?.type === 'contractor' && service.contractor.id === user.id
+  );
 
   if (!user) {
     return (
@@ -55,6 +98,14 @@ export default function ProfileScreen() {
           <Image source={{ uri: user.avatar }} style={styles.avatar} />
           <Text style={styles.name}>{user.name}</Text>
           <Text style={styles.email}>{user.email}</Text>
+          
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={openEditModal}
+          >
+            <Edit3 size={16} color="white" />
+            <Text style={styles.editButtonText}>Edit Profile</Text>
+          </TouchableOpacity>
           
           <View style={styles.stats}>
             <View style={styles.stat}>
@@ -117,19 +168,36 @@ export default function ProfileScreen() {
 
         {user.type === 'contractor' && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Services</Text>
-            <TouchableOpacity 
-              style={styles.actionCard}
-              onPress={() => router.push('/create-service')}
-            >
-              <Award size={24} color="#1DBF73" />
-              <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Create New Service</Text>
-                <Text style={styles.actionSubtitle}>
-                  Share your skills and start earning
-                </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>My Services</Text>
+              <TouchableOpacity 
+                style={styles.createServiceButton}
+                onPress={() => router.push('/create-service')}
+              >
+                <Text style={styles.createServiceText}>+ Add Service</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {userServices.length > 0 ? (
+              <View style={styles.servicesGrid}>
+                {userServices.map((service) => (
+                  <View key={service.id} style={styles.serviceWrapper}>
+                    <ServiceCard service={service} />
+                  </View>
+                ))}
               </View>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity 
+                style={styles.emptyServicesCard}
+                onPress={() => router.push('/create-service')}
+              >
+                <Award size={48} color="#1DBF73" />
+                <Text style={styles.emptyServicesTitle}>No Services Yet</Text>
+                <Text style={styles.emptyServicesSubtitle}>
+                  Create your first service to start earning
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
 
@@ -150,6 +218,66 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+              <X size={24} color="#666" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+            <TouchableOpacity onPress={handleSaveProfile}>
+              <Text style={styles.saveButton}>Save</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Avatar URL</Text>
+              <View style={styles.avatarInputContainer}>
+                <Camera size={20} color="#666" />
+                <TextInput
+                  style={styles.formInput}
+                  value={editForm.avatar}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, avatar: text }))}
+                  placeholder="Enter image URL"
+                  multiline={false}
+                />
+              </View>
+            </View>
+            
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Bio</Text>
+              <TextInput
+                style={[styles.formInput, styles.bioInput]}
+                value={editForm.bio}
+                onChangeText={(text) => setEditForm(prev => ({ ...prev, bio: text }))}
+                placeholder="Tell others about yourself..."
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+            
+            <View style={styles.formSection}>
+              <Text style={styles.formLabel}>Location</Text>
+              <View style={styles.locationInputContainer}>
+                <MapPin size={20} color="#666" />
+                <TextInput
+                  style={styles.formInput}
+                  value={editForm.location}
+                  onChangeText={(text) => setEditForm(prev => ({ ...prev, location: text }))}
+                  placeholder="City, State/Country"
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -301,5 +429,133 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  editButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  createServiceButton: {
+    backgroundColor: '#1DBF73',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  createServiceText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  servicesGrid: {
+    gap: 16,
+  },
+  serviceWrapper: {
+    marginBottom: 16,
+  },
+  emptyServicesCard: {
+    backgroundColor: 'white',
+    padding: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  emptyServicesTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyServicesSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+  },
+  saveButton: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1DBF73',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  formSection: {
+    marginBottom: 24,
+  },
+  formLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  formInput: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    flex: 1,
+  },
+  bioInput: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  avatarInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingLeft: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  locationInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    paddingLeft: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
 });
