@@ -8,7 +8,10 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
+  Dimensions,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
@@ -20,6 +23,11 @@ import {
 } from 'lucide-react-native';
 import { mockServices } from '@/mocks/services';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
+
 export default function CheckoutScreen() {
   const { id, fromChat, chatId } = useLocalSearchParams<{ 
     id: string;
@@ -29,6 +37,7 @@ export default function CheckoutScreen() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const service = mockServices.find(s => s.id === id);
 
@@ -99,7 +108,7 @@ export default function CheckoutScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top + 10, 16) }]}>
         <TouchableOpacity
           style={styles.backNav}
           onPress={() => router.back()}
@@ -220,16 +229,17 @@ export default function CheckoutScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
     paddingVertical: 16,
     backgroundColor: 'white',
     borderBottomWidth: 1,
@@ -239,7 +249,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '600',
     color: '#1a1a1a',
   },
@@ -248,7 +258,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
   },
   serviceCard: {
     backgroundColor: 'white',
@@ -272,7 +282,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   serviceTitle: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '700',
     color: '#1a1a1a',
   },
@@ -322,7 +332,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '700',
     color: '#1a1a1a',
     marginBottom: 16,
@@ -442,10 +452,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
+    padding: isSmallScreen ? 24 : (isTablet ? 60 : 40),
   },
   successTitle: {
-    fontSize: 28,
+    fontSize: isSmallScreen ? 24 : (isTablet ? 32 : 28),
     fontWeight: '700',
     color: '#1a1a1a',
     marginTop: 24,
@@ -503,4 +513,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

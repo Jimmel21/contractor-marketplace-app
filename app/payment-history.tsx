@@ -7,8 +7,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Dimensions,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import {
   DollarSign,
@@ -25,11 +28,17 @@ import { useAuth } from '@/hooks/auth-store';
 import { usePayments } from '@/hooks/payment-store';
 import { PaymentTransaction } from '@/types/payment';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
+
 type FilterType = 'all' | 'released' | 'escrow' | 'pending';
 
 export default function PaymentHistoryScreen() {
   const { user } = useAuth();
   const { getContractorTransactions, getPaymentSummary, isLoading } = usePayments();
+  const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -312,10 +321,11 @@ export default function PaymentHistoryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   content: {
     flex: 1,
@@ -584,4 +594,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);

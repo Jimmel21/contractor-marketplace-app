@@ -9,12 +9,20 @@ import {
   ScrollView,
   Image,
   SafeAreaView,
+  Dimensions,
+  Platform
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Star } from 'lucide-react-native';
 import { Review } from '@/types/review';
 import { useUser } from '@/hooks/user-store';
 import { mockServices } from '@/mocks/services';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenWidth < 375;
+const isTablet = screenWidth >= 768;
+const isWeb = Platform.OS === 'web';
 
 // Mock reviews store (in memory)
 let mockReviews: Review[] = [];
@@ -26,6 +34,7 @@ export default function ReviewsScreen() {
     contractorId?: string;
   }>();
   const { user } = useUser();
+  const insets = useSafeAreaInsets();
   
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState<string>('');
@@ -205,14 +214,15 @@ export default function ReviewsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#F8F9FA',
+    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   scrollView: {
     flex: 1,
-    padding: 20,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
   },
   serviceInfo: {
     flexDirection: 'row',
@@ -240,7 +250,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   serviceTitle: {
-    fontSize: 18,
+    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
@@ -270,7 +280,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: isSmallScreen ? 18 : (isTablet ? 24 : 20),
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 8,
@@ -331,7 +341,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: isSmallScreen ? 16 : (isTablet ? 32 : 20),
   },
   errorText: {
     fontSize: 18,
@@ -349,4 +359,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-});
+};
+
+const styles = StyleSheet.create(baseStyles);
