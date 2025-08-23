@@ -36,11 +36,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/auth-store';
+import { useReviews } from '@/hooks/review-store';
 import { mockServices } from '@/mocks/services';
 import ServiceCard from '@/components/ServiceCard';
 
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
+  const { getReviewsForUser, getUserAverageRating, getUserReviewCount } = useReviews();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({
     bio: '',
@@ -331,6 +333,10 @@ export default function ProfileScreen() {
     user?.type === 'contractor' && service.contractor.id === user.id
   );
 
+  const userReviews = user ? getReviewsForUser(user.id) : [];
+  const averageRating = user ? getUserAverageRating(user.id) : 0;
+  const reviewCount = user ? getUserReviewCount(user.id) : 0;
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -378,12 +384,12 @@ export default function ProfileScreen() {
           <View style={styles.stats}>
             <View style={styles.stat}>
               <Star size={20} color="#FFD700" fill="#FFD700" />
-              <Text style={styles.statValue}>{user.rating}</Text>
+              <Text style={styles.statValue}>{averageRating > 0 ? averageRating : user.rating}</Text>
               <Text style={styles.statLabel}>Rating</Text>
             </View>
             <View style={styles.stat}>
               <MessageCircle size={20} color="white" />
-              <Text style={styles.statValue}>{user.reviewCount}</Text>
+              <Text style={styles.statValue}>{reviewCount > 0 ? reviewCount : user.reviewCount}</Text>
               <Text style={styles.statLabel}>Reviews</Text>
             </View>
             <View style={styles.stat}>
@@ -466,6 +472,52 @@ export default function ProfileScreen() {
                 </Text>
               </TouchableOpacity>
             )}
+          </View>
+        )}
+
+        {/* Reviews Section */}
+        {userReviews.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Reviews</Text>
+            <View style={styles.reviewsContainer}>
+              {userReviews.slice(0, 3).map((review) => (
+                <View key={review.id} style={styles.reviewCard}>
+                  <View style={styles.reviewHeader}>
+                    <Image 
+                      source={{ uri: review.reviewerAvatar || 'https://via.placeholder.com/40' }}
+                      style={styles.reviewerAvatar}
+                    />
+                    <View style={styles.reviewerInfo}>
+                      <Text style={styles.reviewerName}>{review.reviewerName}</Text>
+                      <View style={styles.reviewRating}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={12}
+                            color={star <= review.rating ? '#FFD700' : '#E0E0E0'}
+                            fill={star <= review.rating ? '#FFD700' : 'transparent'}
+                          />
+                        ))}
+                        <Text style={styles.reviewDate}>
+                          {new Date(review.date).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Text style={styles.reviewComment} numberOfLines={3}>
+                    {review.comment}
+                  </Text>
+                </View>
+              ))}
+              
+              {userReviews.length > 3 && (
+                <TouchableOpacity style={styles.viewAllReviewsButton}>
+                  <Text style={styles.viewAllReviewsText}>
+                    View all {userReviews.length} reviews
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
 
@@ -1098,5 +1150,66 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: '#666',
+  },
+  reviewsContainer: {
+    gap: 12,
+  },
+  reviewCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  reviewerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+  },
+  reviewerInfo: {
+    flex: 1,
+  },
+  reviewerName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 4,
+  },
+  reviewRating: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  reviewDate: {
+    fontSize: 12,
+    color: '#999',
+    marginLeft: 8,
+  },
+  reviewComment: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  viewAllReviewsButton: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  viewAllReviewsText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1DBF73',
   },
 });

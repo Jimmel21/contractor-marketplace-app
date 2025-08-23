@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Send, MoreHorizontal, DollarSign, CreditCard, X, CheckCircle, Star } from 'lucide-react-native';
+import ReviewModal from '@/components/ReviewModal';
 import { Message } from '@/types/message';
 import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
@@ -99,6 +100,7 @@ export default function ChatScreen() {
   const [jobCompleted, setJobCompleted] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showReviewInvitation, setShowReviewInvitation] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   
   const conversation = mockConversations.find(c => c.id === id);
@@ -239,8 +241,7 @@ export default function ChatScreen() {
 
   const handleLeaveReview = () => {
     setShowReviewInvitation(false);
-    // Navigate to reviews screen with service context
-    router.push(`/reviews?serviceId=service_1&contractorId=${otherParticipant?.id}`);
+    setShowReviewModal(true);
   };
 
   const skipReview = () => {
@@ -565,6 +566,24 @@ export default function ChatScreen() {
             </View>
           </SafeAreaView>
         </Modal>
+
+        {/* Review Modal */}
+        {user && otherParticipant && (
+          <ReviewModal
+            visible={showReviewModal}
+            onClose={() => setShowReviewModal(false)}
+            reviewee={{
+              id: otherParticipant.id,
+              name: otherParticipant.name,
+              avatar: otherParticipant.avatar,
+            }}
+            reviewer={user}
+            serviceId="service_1"
+            onSubmitSuccess={() => {
+              console.log('Review submitted successfully');
+            }}
+          />
+        )}
       </SafeAreaView>
   );
 }
