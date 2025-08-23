@@ -75,19 +75,7 @@ export default function ServiceDetailScreen() {
       return;
     }
 
-    Alert.alert(
-      'Request Service',
-      `Request "${service.title}" from ${service.contractor.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Request',
-          onPress: () => {
-            Alert.alert('Success', 'Service request sent successfully!');
-          },
-        },
-      ]
-    );
+    router.push(`/checkout?id=${service.id}`);
   };
 
   const nextImage = () => {
@@ -228,7 +216,7 @@ export default function ServiceDetailScreen() {
           onPress={handleRequestService}
         >
           <ShoppingCart size={20} color="white" />
-          <Text style={styles.requestButtonText}>Request Service</Text>
+          <Text style={styles.requestButtonText}>Checkout</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
