@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatar?: string;
   type: 'contractor' | 'client';
+  availableRoles: ('contractor' | 'client')[];
   rating: number;
   reviewCount: number;
   joinedDate: string;

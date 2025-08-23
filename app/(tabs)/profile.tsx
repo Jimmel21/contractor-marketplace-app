@@ -63,10 +63,12 @@ export default function ProfileScreen() {
   }, []);
 
   const toggleUserType = () => {
-    if (user) {
+    if (user && user.availableRoles.length > 1) {
       updateUser({ type: user.type === 'contractor' ? 'client' : 'contractor' });
     }
   };
+  
+  const canToggleRole = user && user.availableRoles.length > 1;
 
   const handleLogout = async () => {
     await logout();
@@ -402,22 +404,24 @@ export default function ProfileScreen() {
           </View>
         </LinearGradient>
 
-        <View style={styles.section}>
-          <View style={styles.userTypeToggle}>
-            <View style={styles.toggleInfo}>
-              <Briefcase size={20} color="#1a1a1a" />
-              <Text style={styles.toggleLabel}>
-                I'm a {user.type === 'contractor' ? 'contractor' : 'client'}
-              </Text>
+        {canToggleRole && (
+          <View style={styles.section}>
+            <View style={styles.userTypeToggle}>
+              <View style={styles.toggleInfo}>
+                <Briefcase size={20} color="#1a1a1a" />
+                <Text style={styles.toggleLabel}>
+                  I'm a {user.type === 'contractor' ? 'contractor' : 'client'}
+                </Text>
+              </View>
+              <Switch
+                value={user.type === 'contractor'}
+                onValueChange={toggleUserType}
+                trackColor={{ false: '#E0E0E0', true: '#1DBF73' }}
+                thumbColor="white"
+              />
             </View>
-            <Switch
-              value={user.type === 'contractor'}
-              onValueChange={toggleUserType}
-              trackColor={{ false: '#E0E0E0', true: '#1DBF73' }}
-              thumbColor="white"
-            />
           </View>
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>

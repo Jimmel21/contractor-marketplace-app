@@ -40,6 +40,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           email: credentials.email,
           avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
           type: 'client',
+          availableRoles: ['client'], // Default login gets client only
           rating: 4.8,
           reviewCount: 0,
           joinedDate: new Date().toISOString(),
@@ -71,16 +72,31 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       }
 
       // Mock registration - replace with actual API call
+      let availableRoles: ('contractor' | 'client')[];
+      let defaultType: 'contractor' | 'client';
+      let bio: string;
+      
+      if (data.userType === 'both') {
+        availableRoles = ['contractor', 'client'];
+        defaultType = 'client'; // Default to client when both are available
+        bio = 'Versatile user who can both hire contractors and provide services on the platform';
+      } else {
+        availableRoles = [data.userType];
+        defaultType = data.userType;
+        bio = `${data.userType === 'contractor' ? 'Professional contractor' : 'Looking for great services'} on the platform`;
+      }
+      
       const newUser: User = {
         id: 'user_' + Date.now(),
         name: data.name,
         email: data.email,
         avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&h=150&fit=crop&crop=face',
-        type: data.userType,
+        type: defaultType,
+        availableRoles,
         rating: 0,
         reviewCount: 0,
         joinedDate: new Date().toISOString(),
-        bio: `${data.userType === 'contractor' ? 'Professional contractor' : 'Looking for great services'} on the platform`,
+        bio,
         location: 'Unknown'
       };
 

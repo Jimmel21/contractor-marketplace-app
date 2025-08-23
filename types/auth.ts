@@ -9,7 +9,7 @@ export interface RegisterData {
   phone: string;
   password: string;
   confirmPassword: string;
-  userType: 'contractor' | 'client';
+  userType: 'contractor' | 'client' | 'both';
 }
 
 export interface AuthState {

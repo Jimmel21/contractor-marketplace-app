@@ -22,7 +22,7 @@ export default function RegisterScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [userType, setUserType] = useState<'contractor' | 'client'>('client');
+  const [userType, setUserType] = useState<'contractor' | 'client' | 'both'>('client');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -234,7 +234,7 @@ export default function RegisterScreen() {
                     styles.userTypeButtonText,
                     userType === 'client' && styles.userTypeButtonTextActive
                   ]}>
-                    Client
+                    Client Only
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -248,10 +248,24 @@ export default function RegisterScreen() {
                     styles.userTypeButtonText,
                     userType === 'contractor' && styles.userTypeButtonTextActive
                   ]}>
-                    Contractor
+                    Contractor Only
                   </Text>
                 </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                style={[
+                  styles.userTypeBothButton,
+                  userType === 'both' && styles.userTypeBothButtonActive
+                ]}
+                onPress={() => setUserType('both')}
+              >
+                <Text style={[
+                  styles.userTypeBothButtonText,
+                  userType === 'both' && styles.userTypeBothButtonTextActive
+                ]}>
+                  Both Client & Contractor
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -357,6 +371,7 @@ const styles = StyleSheet.create({
   userTypeButtons: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 12,
   },
   userTypeButton: {
     flex: 1,
@@ -377,6 +392,27 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   userTypeButtonTextActive: {
+    color: 'white',
+  },
+  userTypeBothButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#E0E0E0',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  userTypeBothButtonActive: {
+    borderColor: '#1DBF73',
+    backgroundColor: '#1DBF73',
+  },
+  userTypeBothButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  userTypeBothButtonTextActive: {
     color: 'white',
   },
   registerButton: {
