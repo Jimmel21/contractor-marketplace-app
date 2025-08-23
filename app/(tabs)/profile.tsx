@@ -503,7 +503,7 @@ export default function ProfileScreen() {
                   
                   <View style={styles.reviewTypeInfo}>
                     <Text style={styles.reviewTypeText}>
-                      {user?.type === 'contractor' ? 'Reviews from clients' : 'Reviews from contractors'}
+                      {user?.type === 'contractor' ? 'Reviews from clients who hired me' : 'Reviews from contractors I hired'}
                     </Text>
                   </View>
                 </View>
@@ -560,7 +560,7 @@ export default function ProfileScreen() {
               <Text style={styles.noReviewsSubtitle}>
                 {user?.type === 'contractor' 
                   ? 'Complete your first service to receive reviews from clients'
-                  : 'Hire your first contractor to leave reviews'
+                  : 'Complete your first job to receive reviews from contractors'
                 }
               </Text>
             </View>
