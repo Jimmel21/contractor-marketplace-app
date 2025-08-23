@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -32,6 +33,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <StatusBar style="dark" />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ReviewProvider>
