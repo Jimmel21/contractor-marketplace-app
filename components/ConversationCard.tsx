@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Conversation } from '@/types/message';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/theme-store';
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SCREEN_SIZES } from '@/constants/design-system';
 
 interface ConversationCardProps {
   conversation: Conversation;
@@ -29,7 +30,14 @@ export default function ConversationCard({ conversation }: ConversationCardProps
   };
 
   return (
-    <TouchableOpacity style={[styles.container, { backgroundColor: theme.colors.surface }]} onPress={handlePress}>
+    <TouchableOpacity 
+      style={[styles.container, { 
+        backgroundColor: theme.colors.card,
+        borderBottomColor: theme.colors.borderLight 
+      }]} 
+      onPress={handlePress}
+      activeOpacity={0.95}
+    >
       <Image 
         source={{ uri: otherParticipant?.avatar || 'https://via.placeholder.com/50' }} 
         style={styles.avatar} 
@@ -37,8 +45,12 @@ export default function ConversationCard({ conversation }: ConversationCardProps
       
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={[styles.name, { color: theme.colors.text }]}>{otherParticipant?.name}</Text>
-          <Text style={[styles.time, { color: theme.colors.textSecondary }]}>{formatTime(conversation.lastMessage.timestamp)}</Text>
+          <Text style={[styles.name, { color: theme.colors.text }]}>
+            {otherParticipant?.name}
+          </Text>
+          <Text style={[styles.time, { color: theme.colors.textTertiary }]}>
+            {formatTime(conversation.lastMessage.timestamp)}
+          </Text>
         </View>
         
         <View style={styles.messageRow}>
@@ -55,7 +67,7 @@ export default function ConversationCard({ conversation }: ConversationCardProps
           </Text>
           
           {conversation.unreadCount > 0 && (
-            <View style={styles.unreadBadge}>
+            <View style={[styles.unreadBadge, { backgroundColor: theme.colors.primary }]}>
               <Text style={styles.unreadCount}>{conversation.unreadCount}</Text>
             </View>
           )}
@@ -68,15 +80,14 @@ export default function ConversationCard({ conversation }: ConversationCardProps
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    padding: 16,
+    padding: SPACING.lg,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
+    width: SCREEN_SIZES.isSmall ? 44 : 50,
+    height: SCREEN_SIZES.isSmall ? 44 : 50,
+    borderRadius: BORDER_RADIUS.full,
+    marginRight: SPACING.md,
   },
   content: {
     flex: 1,
@@ -85,14 +96,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h4,
   },
   time: {
-    fontSize: 12,
+    ...TYPOGRAPHY.small,
   },
   messageRow: {
     flexDirection: 'row',
@@ -100,24 +110,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   lastMessage: {
-    fontSize: 14,
+    ...TYPOGRAPHY.body,
     flex: 1,
   },
   unreadMessage: {
-    fontWeight: '600',
+    ...TYPOGRAPHY.bodyMedium,
   },
   unreadBadge: {
-    backgroundColor: '#1DBF73',
-    borderRadius: 10,
+    borderRadius: BORDER_RADIUS.full,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginLeft: SPACING.sm,
   },
   unreadCount: {
     color: 'white',
-    fontSize: 12,
+    ...TYPOGRAPHY.small,
     fontWeight: '600',
   },
 });

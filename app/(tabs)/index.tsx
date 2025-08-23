@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Dimensions,
   Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,10 +22,16 @@ import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
 import { useTheme } from '@/hooks/theme-store';
 import { ServiceFilters } from '@/types/service';
+import { 
+  TYPOGRAPHY, 
+  SPACING, 
+  BORDER_RADIUS, 
+  SHADOWS, 
+  SCREEN_SIZES, 
+  GRADIENTS,
+  LAYOUT 
+} from '@/constants/design-system';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-const isSmallScreen = screenWidth < 375;
-const isTablet = screenWidth >= 768;
 const isWeb = Platform.OS === 'web';
 
 export default function HomeScreen() {
@@ -92,7 +97,7 @@ export default function HomeScreen() {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.loadingContainer, { paddingTop: insets.top, backgroundColor: theme.colors.background }]}>
-          <ActivityIndicator size="large" color="#1DBF73" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading services...</Text>
         </View>
       </View>
@@ -102,13 +107,13 @@ export default function HomeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <LinearGradient
-        colors={['#1DBF73', '#17A85C']}
-        style={[styles.header, { paddingTop: Math.max(insets.top + 10, 50) }]}
+        colors={GRADIENTS.primary}
+        style={[styles.header, { paddingTop: Math.max(insets.top + SPACING.md, 50) }]}
       >
-        <Text style={[styles.greeting, { fontSize: isSmallScreen ? 20 : (isTablet ? 28 : 24) }]}>
+        <Text style={styles.greeting}>
           Hello, {user?.name?.split(' ')[0] || 'there'}! 👋
         </Text>
-        <Text style={[styles.subtitle, { fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16) }]}>
+        <Text style={styles.subtitle}>
           {user?.type === 'contractor' 
             ? 'Ready to showcase your skills?' 
             : 'Find the perfect service for your needs'
@@ -116,14 +121,14 @@ export default function HomeScreen() {
         </Text>
         
         <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <Search size={20} color="#666" />
+          <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+            <Search size={20} color={theme.colors.textTertiary} />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: theme.colors.text }]}
               placeholder="Search services..."
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholderTextColor="#666"
+              placeholderTextColor={theme.colors.textTertiary}
             />
           </View>
           <TouchableOpacity 
@@ -261,15 +266,15 @@ export default function HomeScreen() {
         <TouchableOpacity 
           style={[styles.floatingButton, { 
             bottom: Platform.OS === 'ios' ? 90 + insets.bottom : 90,
-            right: isSmallScreen ? 16 : 20,
-            width: isSmallScreen ? 50 : 56,
-            height: isSmallScreen ? 50 : 56,
-            borderRadius: isSmallScreen ? 25 : 28
+            right: LAYOUT.containerPadding,
+            width: SCREEN_SIZES.isSmall ? 50 : 56,
+            height: SCREEN_SIZES.isSmall ? 50 : 56,
+            borderRadius: BORDER_RADIUS.full
           }]} 
           onPress={handleCreateService}
           activeOpacity={0.8}
         >
-          <Plus size={isSmallScreen ? 20 : 24} color="white" />
+          <Plus size={SCREEN_SIZES.isSmall ? 20 : 24} color="white" />
         </TouchableOpacity>
       )}
     </View>
@@ -279,49 +284,46 @@ export default function HomeScreen() {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#1DBF73',
-    ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
+    ...(isWeb && SCREEN_SIZES.isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   header: {
-    paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
-    paddingBottom: isSmallScreen ? 16 : 20,
-    paddingTop: 10,
+    paddingHorizontal: LAYOUT.containerPadding,
+    paddingBottom: SPACING.xl,
+    paddingTop: SPACING.md,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h2,
     color: 'white',
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   subtitle: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body,
     color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: isSmallScreen ? 16 : 20,
+    marginBottom: SPACING.xl,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.md,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: isSmallScreen ? 10 : 12,
-    paddingHorizontal: isSmallScreen ? 12 : 16,
-    paddingVertical: isSmallScreen ? 10 : 12,
-    marginRight: isSmallScreen ? 8 : 12,
+    borderRadius: BORDER_RADIUS.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+    ...SHADOWS.sm,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 8,
-    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    color: '#1a1a1a',
+    marginLeft: SPACING.sm,
+    ...TYPOGRAPHY.body,
   },
   filterButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: isSmallScreen ? 10 : 12,
-    borderRadius: isSmallScreen ? 10 : 12,
+    padding: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl,
     position: 'relative',
   },
   filterButtonActive: {
@@ -329,10 +331,10 @@ const baseStyles = {
   },
   filterBadge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
+    top: -SPACING.xs,
+    right: -SPACING.xs,
     backgroundColor: '#FF4444',
-    borderRadius: 10,
+    borderRadius: BORDER_RADIUS.full,
     minWidth: 20,
     height: 20,
     alignItems: 'center',
@@ -340,89 +342,87 @@ const baseStyles = {
   },
   filterBadgeText: {
     color: 'white',
-    fontSize: 12,
+    ...TYPOGRAPHY.small,
     fontWeight: '600',
   },
   content: {
     flex: 1,
   },
   section: {
-    paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
-    paddingVertical: isSmallScreen ? 12 : 20,
+    paddingHorizontal: LAYOUT.containerPadding,
+    paddingVertical: LAYOUT.sectionSpacing,
     paddingBottom: 0,
   },
   sectionTitle: {
-    fontSize: isSmallScreen ? 18 : (isTablet ? 24 : 20),
-    fontWeight: '700',
-    marginBottom: isSmallScreen ? 12 : 16,
+    ...TYPOGRAPHY.h3,
+    marginBottom: SPACING.lg,
   },
   categoriesList: {
-    paddingRight: isSmallScreen ? 16 : 20,
+    paddingRight: LAYOUT.containerPadding,
   },
   activeFiltersContainer: {
-    marginHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
-    marginBottom: 10,
+    marginHorizontal: LAYOUT.containerPadding,
+    marginBottom: SPACING.md,
   },
   activeFiltersRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: SPACING.sm,
   },
   activeFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#E3F2FD',
-    paddingHorizontal: isSmallScreen ? 8 : 12,
-    paddingVertical: isSmallScreen ? 4 : 6,
-    borderRadius: isSmallScreen ? 12 : 16,
-    gap: 4,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.xl,
+    gap: SPACING.xs,
   },
   activeFilterText: {
-    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
+    ...TYPOGRAPHY.small,
     fontWeight: '500',
   },
   removeFilter: {
-    fontSize: 16,
+    ...TYPOGRAPHY.body,
     color: '#1976D2',
     fontWeight: '600',
-    marginLeft: 4,
+    marginLeft: SPACING.xs,
   },
   clearAllButton: {
     backgroundColor: '#FF4444',
-    paddingHorizontal: isSmallScreen ? 8 : 12,
-    paddingVertical: isSmallScreen ? 4 : 6,
-    borderRadius: isSmallScreen ? 12 : 16,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.xl,
   },
   clearAllText: {
-    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
+    ...TYPOGRAPHY.small,
     color: 'white',
     fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',
-    padding: isSmallScreen ? 24 : (isTablet ? 60 : 40),
+    padding: SCREEN_SIZES.isTablet ? SPACING.xxxl * 2 : SPACING.xxxl,
   },
   emptyTitle: {
-    fontSize: isSmallScreen ? 16 : (isTablet ? 22 : 18),
-    fontWeight: '600',
-    marginBottom: 8,
+    ...TYPOGRAPHY.h4,
+    marginBottom: SPACING.sm,
   },
   emptyText: {
-    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
+    ...TYPOGRAPHY.body,
     textAlign: 'center',
-    marginBottom: isSmallScreen ? 16 : 20,
-    maxWidth: isTablet ? 400 : '100%',
+    marginBottom: SPACING.xl,
+    maxWidth: SCREEN_SIZES.isTablet ? 400 : '100%',
   },
   clearFiltersButton: {
     backgroundColor: '#1DBF73',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingHorizontal: SPACING.xxl,
+    paddingVertical: SPACING.md,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm,
   },
   clearFiltersButtonText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
+    ...TYPOGRAPHY.bodyMedium,
   },
   loadingContainer: {
     flex: 1,
@@ -430,23 +430,15 @@ const baseStyles = {
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    fontWeight: '500',
+    marginTop: SPACING.lg,
+    ...TYPOGRAPHY.body,
   },
   floatingButton: {
     position: 'absolute',
     backgroundColor: '#1DBF73',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4.65,
+    ...SHADOWS.xl,
   },
 };
 

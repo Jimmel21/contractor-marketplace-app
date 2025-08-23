@@ -1,13 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Platform } from 'react-native';
 import { Star, Clock, MapPin } from 'lucide-react-native';
 import { Service } from '@/types/service';
 import { router } from 'expo-router';
 import { useTheme } from '@/hooks/theme-store';
-
-const { width: screenWidth } = Dimensions.get('window');
-const isSmallScreen = screenWidth < 375;
-const isTablet = screenWidth >= 768;
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, SCREEN_SIZES } from '@/constants/design-system';
 
 interface ServiceCardProps {
   service: Service;
@@ -21,14 +18,19 @@ export default function ServiceCard({ service }: ServiceCardProps) {
   };
 
   return (
-    <TouchableOpacity style={[styles.container, { backgroundColor: theme.colors.surface }]} onPress={handlePress}>
-      <Image source={{ uri: service.images[0] }} style={styles.image} />
-      
-      {service.featured && (
-        <View style={styles.featuredBadge}>
-          <Text style={styles.featuredText}>Featured</Text>
-        </View>
-      )}
+    <TouchableOpacity 
+      style={[styles.container, { backgroundColor: theme.colors.card, borderColor: theme.colors.borderLight }]} 
+      onPress={handlePress}
+      activeOpacity={0.95}
+    >
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: service.images[0] }} style={styles.image} />
+        {service.featured && (
+          <View style={styles.featuredBadge}>
+            <Text style={styles.featuredText}>Featured</Text>
+          </View>
+        )}
+      </View>
       
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
@@ -37,31 +39,37 @@ export default function ServiceCard({ service }: ServiceCardProps) {
         
         <View style={styles.contractorInfo}>
           <Image 
-            source={{ uri: service.contractor.avatar || 'https://via.placeholder.com/30' }} 
+            source={{ uri: service.contractor.avatar || 'https://via.placeholder.com/32' }} 
             style={styles.avatar} 
           />
-          <Text style={[styles.contractorName, { color: theme.colors.textSecondary }]}>{service.contractor.name}</Text>
+          <Text style={[styles.contractorName, { color: theme.colors.textSecondary }]}>
+            {service.contractor.name}
+          </Text>
         </View>
         
         <View style={styles.metaRow}>
           <View style={styles.rating}>
-            <Star size={14} color="#FFD700" fill="#FFD700" />
+            <Star size={SCREEN_SIZES.isSmall ? 12 : 14} color="#FFD700" fill="#FFD700" />
             <Text style={[styles.ratingText, { color: theme.colors.textSecondary }]}>
               {service.rating} ({service.reviewCount})
             </Text>
           </View>
           <View style={styles.location}>
-            <MapPin size={12} color="#999" />
-            <Text style={[styles.locationText, { color: theme.colors.textTertiary }]}>{service.location}</Text>
+            <MapPin size={SCREEN_SIZES.isSmall ? 10 : 12} color={theme.colors.textTertiary} />
+            <Text style={[styles.locationText, { color: theme.colors.textTertiary }]}>
+              {service.location}
+            </Text>
           </View>
         </View>
         
         <View style={styles.footer}>
           <View style={styles.delivery}>
-            <Clock size={14} color="#666" />
-            <Text style={[styles.deliveryText, { color: theme.colors.textSecondary }]}>{service.deliveryTime}</Text>
+            <Clock size={SCREEN_SIZES.isSmall ? 12 : 14} color={theme.colors.textSecondary} />
+            <Text style={[styles.deliveryText, { color: theme.colors.textSecondary }]}>
+              {service.deliveryTime}
+            </Text>
           </View>
-          <Text style={styles.price}>From ${service.price}</Text>
+          <Text style={[styles.price, { color: theme.colors.primary }]}>From ${service.price}</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -70,80 +78,76 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: isSmallScreen ? 10 : 12,
-    marginBottom: isSmallScreen ? 12 : 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.lg,
+    borderWidth: Platform.OS === 'web' ? 1 : 0,
     overflow: 'hidden',
+    ...SHADOWS.md,
+  },
+  imageContainer: {
+    position: 'relative',
   },
   image: {
     width: '100%',
-    height: isSmallScreen ? 140 : (isTablet ? 200 : 160),
-    backgroundColor: '#f0f0f0',
+    height: SCREEN_SIZES.isSmall ? 140 : SCREEN_SIZES.isTablet ? 200 : 160,
+    backgroundColor: '#F3F4F6',
   },
   featuredBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: SPACING.md,
+    left: SPACING.md,
     backgroundColor: '#FF6B35',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: BORDER_RADIUS.sm,
   },
   featuredText: {
     color: 'white',
-    fontSize: 12,
+    ...TYPOGRAPHY.small,
     fontWeight: '600',
   },
   content: {
-    padding: isSmallScreen ? 12 : (isTablet ? 20 : 16),
+    padding: SPACING.lg,
   },
   title: {
-    fontSize: isSmallScreen ? 14 : (isTablet ? 18 : 16),
-    fontWeight: '600',
-    marginBottom: isSmallScreen ? 8 : 12,
-    lineHeight: isSmallScreen ? 18 : (isTablet ? 24 : 22),
+    ...TYPOGRAPHY.h4,
+    marginBottom: SPACING.sm,
   },
   contractorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: SPACING.md,
   },
   avatar: {
-    width: isSmallScreen ? 20 : 24,
-    height: isSmallScreen ? 20 : 24,
-    borderRadius: isSmallScreen ? 10 : 12,
-    marginRight: 8,
+    width: SCREEN_SIZES.isSmall ? 24 : 28,
+    height: SCREEN_SIZES.isSmall ? 24 : 28,
+    borderRadius: SCREEN_SIZES.isSmall ? 12 : 14,
+    marginRight: SPACING.sm,
   },
   contractorName: {
-    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    fontWeight: '500',
+    ...TYPOGRAPHY.captionMedium,
   },
   metaRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: SPACING.md,
   },
   rating: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.xs,
   },
   location: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.xs,
   },
   locationText: {
-    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
-    marginLeft: 4,
+    ...TYPOGRAPHY.small,
   },
   ratingText: {
-    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    marginLeft: 4,
-    fontWeight: '500',
+    ...TYPOGRAPHY.captionMedium,
   },
   footer: {
     flexDirection: 'row',
@@ -153,14 +157,13 @@ const styles = StyleSheet.create({
   delivery: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: SPACING.xs,
   },
   deliveryText: {
-    fontSize: isSmallScreen ? 12 : (isTablet ? 16 : 14),
-    marginLeft: 4,
+    ...TYPOGRAPHY.caption,
   },
   price: {
-    fontSize: isSmallScreen ? 16 : (isTablet ? 20 : 18),
+    ...TYPOGRAPHY.h4,
     fontWeight: '700',
-    color: '#1DBF73',
   },
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { ServiceCategory } from '@/types/service';
 import { useTheme } from '@/hooks/theme-store';
 import { 
@@ -10,10 +10,7 @@ import {
   Video, 
   Camera 
 } from 'lucide-react-native';
-
-const { width: screenWidth } = Dimensions.get('window');
-const isSmallScreen = screenWidth < 375;
-const isTablet = screenWidth >= 768;
+import { TYPOGRAPHY, SPACING, BORDER_RADIUS, SHADOWS, SCREEN_SIZES } from '@/constants/design-system';
 
 interface CategoryCardProps {
   category: ServiceCategory;
@@ -35,11 +32,18 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
 
   return (
     <TouchableOpacity 
-      style={[styles.container, { backgroundColor: category.color + '15' }]} 
+      style={[styles.container, { 
+        backgroundColor: theme.colors.card,
+        borderColor: theme.colors.borderLight,
+      }]} 
       onPress={onPress}
+      activeOpacity={0.8}
     >
       <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
-        <IconComponent size={isSmallScreen ? 18 : (isTablet ? 28 : 24)} color="white" />
+        <IconComponent 
+          size={SCREEN_SIZES.isSmall ? 18 : SCREEN_SIZES.isTablet ? 28 : 24} 
+          color="white" 
+        />
       </View>
       <Text style={[styles.name, { color: theme.colors.text }]}>{category.name}</Text>
     </TouchableOpacity>
@@ -48,25 +52,26 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    width: isSmallScreen ? 100 : (isTablet ? 140 : 120),
-    height: isSmallScreen ? 80 : (isTablet ? 120 : 100),
-    borderRadius: isSmallScreen ? 10 : 12,
-    padding: isSmallScreen ? 12 : (isTablet ? 20 : 16),
+    width: SCREEN_SIZES.isSmall ? 100 : SCREEN_SIZES.isTablet ? 140 : 120,
+    height: SCREEN_SIZES.isSmall ? 80 : SCREEN_SIZES.isTablet ? 120 : 100,
+    borderRadius: BORDER_RADIUS.xl,
+    borderWidth: 1,
+    padding: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: isSmallScreen ? 8 : 12,
+    marginRight: SPACING.md,
+    ...SHADOWS.sm,
   },
   iconContainer: {
-    width: isSmallScreen ? 36 : (isTablet ? 56 : 48),
-    height: isSmallScreen ? 36 : (isTablet ? 56 : 48),
-    borderRadius: isSmallScreen ? 18 : (isTablet ? 28 : 24),
+    width: SCREEN_SIZES.isSmall ? 36 : SCREEN_SIZES.isTablet ? 56 : 48,
+    height: SCREEN_SIZES.isSmall ? 36 : SCREEN_SIZES.isTablet ? 56 : 48,
+    borderRadius: BORDER_RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: isSmallScreen ? 6 : 8,
+    marginBottom: SPACING.sm,
   },
   name: {
-    fontSize: isSmallScreen ? 10 : (isTablet ? 14 : 12),
-    fontWeight: '600',
+    ...TYPOGRAPHY.smallMedium,
     textAlign: 'center',
   },
 });
