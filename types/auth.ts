@@ -6,6 +6,7 @@ export interface LoginCredentials {
 export interface RegisterData {
   name: string;
   email: string;
+  phone: string;
   password: string;
   confirmPassword: string;
   userType: 'contractor' | 'client';
