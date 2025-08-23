@@ -476,50 +476,96 @@ export default function ProfileScreen() {
         )}
 
         {/* Reviews Section */}
-        {userReviews.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Reviews</Text>
-            <View style={styles.reviewsContainer}>
-              {userReviews.slice(0, 3).map((review) => (
-                <View key={review.id} style={styles.reviewCard}>
-                  <View style={styles.reviewHeader}>
-                    <Image 
-                      source={{ uri: review.reviewerAvatar || 'https://via.placeholder.com/40' }}
-                      style={styles.reviewerAvatar}
-                    />
-                    <View style={styles.reviewerInfo}>
-                      <Text style={styles.reviewerName}>{review.reviewerName}</Text>
-                      <View style={styles.reviewRating}>
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            size={12}
-                            color={star <= review.rating ? '#FFD700' : '#E0E0E0'}
-                            fill={star <= review.rating ? '#FFD700' : 'transparent'}
-                          />
-                        ))}
-                        <Text style={styles.reviewDate}>
-                          {new Date(review.date).toLocaleDateString()}
-                        </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Reviews</Text>
+          
+          {userReviews.length > 0 ? (
+            <>
+              {/* Reviews Summary */}
+              <View style={styles.reviewsSummary}>
+                <View style={styles.ratingOverview}>
+                  <View style={styles.averageRatingContainer}>
+                    <Text style={styles.averageRatingNumber}>{averageRating.toFixed(1)}</Text>
+                    <View style={styles.averageRatingStars}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          size={16}
+                          color={star <= Math.round(averageRating) ? '#FFD700' : '#E0E0E0'}
+                          fill={star <= Math.round(averageRating) ? '#FFD700' : 'transparent'}
+                        />
+                      ))}
+                    </View>
+                    <Text style={styles.reviewCountText}>
+                      {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
+                    </Text>
+                  </View>
+                  
+                  <View style={styles.reviewTypeInfo}>
+                    <Text style={styles.reviewTypeText}>
+                      {user?.type === 'contractor' ? 'Reviews from clients' : 'Reviews from contractors'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              {/* Individual Reviews */}
+              <View style={styles.reviewsContainer}>
+                {userReviews.slice(0, 5).map((review) => (
+                  <View key={review.id} style={styles.reviewCard}>
+                    <View style={styles.reviewHeader}>
+                      <Image 
+                        source={{ uri: review.reviewerAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face' }}
+                        style={styles.reviewerAvatar}
+                      />
+                      <View style={styles.reviewerInfo}>
+                        <Text style={styles.reviewerName}>{review.reviewerName}</Text>
+                        <View style={styles.reviewRating}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              size={12}
+                              color={star <= review.rating ? '#FFD700' : '#E0E0E0'}
+                              fill={star <= review.rating ? '#FFD700' : 'transparent'}
+                            />
+                          ))}
+                          <Text style={styles.reviewDate}>
+                            {new Date(review.date).toLocaleDateString()}
+                          </Text>
+                        </View>
                       </View>
                     </View>
+                    <Text style={styles.reviewComment} numberOfLines={4}>
+                      {review.comment}
+                    </Text>
                   </View>
-                  <Text style={styles.reviewComment} numberOfLines={3}>
-                    {review.comment}
-                  </Text>
-                </View>
-              ))}
-              
-              {userReviews.length > 3 && (
-                <TouchableOpacity style={styles.viewAllReviewsButton}>
-                  <Text style={styles.viewAllReviewsText}>
-                    View all {userReviews.length} reviews
-                  </Text>
-                </TouchableOpacity>
-              )}
+                ))}
+                
+                {userReviews.length > 5 && (
+                  <TouchableOpacity 
+                    style={styles.viewAllReviewsButton}
+                    onPress={() => router.push('/reviews')}
+                  >
+                    <Text style={styles.viewAllReviewsText}>
+                      View all {userReviews.length} reviews
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </>
+          ) : (
+            <View style={styles.noReviewsCard}>
+              <Star size={48} color="#E0E0E0" />
+              <Text style={styles.noReviewsTitle}>No Reviews Yet</Text>
+              <Text style={styles.noReviewsSubtitle}>
+                {user?.type === 'contractor' 
+                  ? 'Complete your first service to receive reviews from clients'
+                  : 'Hire your first contractor to leave reviews'
+                }
+              </Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
@@ -1211,5 +1257,72 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#1DBF73',
+  },
+  reviewsSummary: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  ratingOverview: {
+    alignItems: 'center',
+  },
+  averageRatingContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  averageRatingNumber: {
+    fontSize: 48,
+    fontWeight: '700',
+    color: '#1a1a1a',
+    marginBottom: 8,
+  },
+  averageRatingStars: {
+    flexDirection: 'row',
+    gap: 4,
+    marginBottom: 8,
+  },
+  reviewCountText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  reviewTypeInfo: {
+    alignItems: 'center',
+  },
+  reviewTypeText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  noReviewsCard: {
+    backgroundColor: 'white',
+    padding: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  noReviewsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  noReviewsSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
