@@ -28,10 +28,12 @@ import {
   Camera,
   DollarSign,
   ImageIcon,
-  Upload
+  Upload,
+  Navigation
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/auth-store';
 import { mockServices } from '@/mocks/services';
 import ServiceCard from '@/components/ServiceCard';
@@ -47,6 +49,7 @@ export default function ProfileScreen() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [urlInputVisible, setUrlInputVisible] = useState(false);
   const [urlInputValue, setUrlInputValue] = useState('');
+  const [isGettingLocation, setIsGettingLocation] = useState(false);
 
   const toggleUserType = () => {
     if (user) {
@@ -221,6 +224,98 @@ export default function ProfileScreen() {
     }
     setUrlInputVisible(false);
     setUrlInputValue('');
+  };
+
+  const getCurrentLocation = async () => {
+    if (Platform.OS === 'web') {
+      setIsGettingLocation(true);
+      try {
+        if (!navigator.geolocation) {
+          Alert.alert('Error', 'Geolocation is not supported by this browser.');
+          return;
+        }
+
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+          });
+        });
+
+        const { latitude, longitude } = position.coords;
+        
+        // Use reverse geocoding to get address
+        const response = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+        );
+        const data = await response.json();
+        
+        const location = data.city && data.countryName 
+          ? `${data.city}, ${data.countryName}`
+          : data.locality || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+        
+        setEditForm(prev => ({ ...prev, location }));
+        Alert.alert('Success', 'Location detected successfully!');
+      } catch (error) {
+        console.error('Error getting location:', error);
+        Alert.alert(
+          'Location Error', 
+          'Unable to get your current location. Please enter it manually or check your location permissions.'
+        );
+      } finally {
+        setIsGettingLocation(false);
+      }
+    } else {
+      // Mobile implementation
+      setIsGettingLocation(true);
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert(
+            'Permission Required',
+            'Please grant location permission to use this feature.'
+          );
+          return;
+        }
+
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const { latitude, longitude } = location.coords;
+        
+        // Reverse geocode to get address
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
+
+        if (addresses.length > 0) {
+          const address = addresses[0];
+          const locationString = address.city && address.country 
+            ? `${address.city}, ${address.country}`
+            : address.region || `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+          
+          setEditForm(prev => ({ ...prev, location: locationString }));
+          Alert.alert('Success', 'Location detected successfully!');
+        } else {
+          setEditForm(prev => ({ 
+            ...prev, 
+            location: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}` 
+          }));
+          Alert.alert('Success', 'Coordinates detected successfully!');
+        }
+      } catch (error) {
+        console.error('Error getting location:', error);
+        Alert.alert(
+          'Location Error', 
+          'Unable to get your current location. Please enter it manually or check your location permissions.'
+        );
+      } finally {
+        setIsGettingLocation(false);
+      }
+    }
   };
 
   const userServices = mockServices.filter(service => 
@@ -450,7 +545,28 @@ export default function ProfileScreen() {
                   onChangeText={(text) => setEditForm(prev => ({ ...prev, location: text }))}
                   placeholder="City, State/Country"
                 />
+                <TouchableOpacity 
+                  style={styles.locationButton}
+                  onPress={getCurrentLocation}
+                  disabled={isGettingLocation}
+                >
+                  <Navigation 
+                    size={20} 
+                    color={isGettingLocation ? "#ccc" : "#1DBF73"} 
+                  />
+                </TouchableOpacity>
               </View>
+              
+              <TouchableOpacity 
+                style={[styles.useLocationButton, isGettingLocation && styles.useLocationButtonDisabled]}
+                onPress={getCurrentLocation}
+                disabled={isGettingLocation}
+              >
+                <Navigation size={16} color={isGettingLocation ? "#ccc" : "#1DBF73"} />
+                <Text style={[styles.useLocationButtonText, isGettingLocation && styles.useLocationButtonTextDisabled]}>
+                  {isGettingLocation ? 'Getting location...' : 'Use Current Location'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </ScrollView>
         </SafeAreaView>
@@ -776,8 +892,38 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     paddingLeft: 16,
+    paddingRight: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  locationButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  useLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#1DBF73',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    gap: 8,
+  },
+  useLocationButtonDisabled: {
+    borderColor: '#e0e0e0',
+    backgroundColor: '#f8f9fa',
+  },
+  useLocationButtonText: {
+    color: '#1DBF73',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  useLocationButtonTextDisabled: {
+    color: '#ccc',
   },
   avatarSection: {
     alignItems: 'center',
