@@ -10,7 +10,9 @@ import {
   Switch,
   Modal,
   TextInput,
-  Alert
+  Alert,
+  ActionSheetIOS,
+  Platform
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { 
@@ -24,9 +26,12 @@ import {
   Edit3,
   X,
   Camera,
-  DollarSign
+  DollarSign,
+  ImageIcon,
+  Upload
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/hooks/auth-store';
 import { mockServices } from '@/mocks/services';
 import ServiceCard from '@/components/ServiceCard';
@@ -39,6 +44,7 @@ export default function ProfileScreen() {
     location: '',
     avatar: ''
   });
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
 
   const toggleUserType = () => {
     if (user) {
@@ -72,6 +78,134 @@ export default function ProfileScreen() {
     
     setEditModalVisible(false);
     Alert.alert('Success', 'Profile updated successfully!');
+  };
+
+  const requestPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
+        Alert.alert(
+          'Permissions Required',
+          'Please grant camera and photo library permissions to upload photos.'
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const pickImageFromLibrary = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          const base64Image = `data:image/jpeg;base64,${asset.base64}`;
+          setEditForm(prev => ({ ...prev, avatar: base64Image }));
+        } else if (asset.uri) {
+          setEditForm(prev => ({ ...prev, avatar: asset.uri }));
+        }
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to select image. Please try again.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        if (asset.base64) {
+          const base64Image = `data:image/jpeg;base64,${asset.base64}`;
+          setEditForm(prev => ({ ...prev, avatar: base64Image }));
+        } else if (asset.uri) {
+          setEditForm(prev => ({ ...prev, avatar: asset.uri }));
+        }
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const showPhotoOptions = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Take Photo', 'Choose from Library', 'Enter URL'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            takePhoto();
+          } else if (buttonIndex === 2) {
+            pickImageFromLibrary();
+          } else if (buttonIndex === 3) {
+            showUrlInput();
+          }
+        }
+      );
+    } else {
+      Alert.alert(
+        'Select Photo',
+        'Choose how you want to add your profile photo',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Take Photo', onPress: takePhoto },
+          { text: 'Choose from Library', onPress: pickImageFromLibrary },
+          { text: 'Enter URL', onPress: showUrlInput },
+        ]
+      );
+    }
+  };
+
+  const showUrlInput = () => {
+    Alert.prompt(
+      'Enter Image URL',
+      'Please enter the URL of your profile image',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'OK',
+          onPress: (url) => {
+            if (url && url.trim()) {
+              setEditForm(prev => ({ ...prev, avatar: url.trim() }));
+            }
+          },
+        },
+      ],
+      'plain-text',
+      editForm.avatar
+    );
   };
 
   const userServices = mockServices.filter(service => 
@@ -237,16 +371,44 @@ export default function ProfileScreen() {
           
           <ScrollView style={styles.modalContent}>
             <View style={styles.formSection}>
-              <Text style={styles.formLabel}>Avatar URL</Text>
-              <View style={styles.avatarInputContainer}>
-                <Camera size={20} color="#666" />
-                <TextInput
-                  style={styles.formInput}
-                  value={editForm.avatar}
-                  onChangeText={(text) => setEditForm(prev => ({ ...prev, avatar: text }))}
-                  placeholder="Enter image URL"
-                  multiline={false}
-                />
+              <Text style={styles.formLabel}>Profile Photo</Text>
+              
+              <View style={styles.avatarSection}>
+                <View style={styles.avatarPreviewContainer}>
+                  <Image 
+                    source={{ uri: editForm.avatar || user?.avatar }} 
+                    style={styles.avatarPreview}
+                  />
+                  <TouchableOpacity 
+                    style={styles.avatarEditButton}
+                    onPress={showPhotoOptions}
+                    disabled={isUploadingPhoto}
+                  >
+                    <Camera size={16} color="white" />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.photoButtons}>
+                  <TouchableOpacity 
+                    style={[styles.photoButton, styles.primaryPhotoButton]}
+                    onPress={showPhotoOptions}
+                    disabled={isUploadingPhoto}
+                  >
+                    <Upload size={16} color="white" />
+                    <Text style={styles.photoButtonText}>
+                      {isUploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.photoButton, styles.secondaryPhotoButton]}
+                    onPress={showUrlInput}
+                    disabled={isUploadingPhoto}
+                  >
+                    <ImageIcon size={16} color="#1DBF73" />
+                    <Text style={styles.secondaryPhotoButtonText}>Use URL</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
             
@@ -557,5 +719,64 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
     borderWidth: 1,
     borderColor: '#e0e0e0',
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatarPreviewContainer: {
+    position: 'relative',
+    marginBottom: 16,
+  },
+  avatarPreview: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 3,
+    borderColor: '#1DBF73',
+  },
+  avatarEditButton: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#1DBF73',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'white',
+  },
+  photoButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  photoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    gap: 6,
+  },
+  primaryPhotoButton: {
+    backgroundColor: '#1DBF73',
+  },
+  secondaryPhotoButton: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#1DBF73',
+  },
+  photoButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  secondaryPhotoButtonText: {
+    color: '#1DBF73',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
