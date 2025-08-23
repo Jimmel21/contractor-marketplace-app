@@ -6,7 +6,6 @@ import {
   ScrollView, 
   TextInput, 
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
   ActivityIndicator,
   Dimensions,
@@ -89,20 +88,20 @@ export default function HomeScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
+      <View style={styles.container}>
+        <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
           <ActivityIndicator size="large" color="#1DBF73" />
           <Text style={styles.loadingText}>Loading services...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={['#1DBF73', '#17A85C']}
-        style={[styles.header, { paddingTop: Math.max(insets.top, 10) }]}
+        style={[styles.header, { paddingTop: Math.max(insets.top + 10, 50) }]}
       >
         <Text style={[styles.greeting, { fontSize: isSmallScreen ? 20 : (isTablet ? 28 : 24) }]}>
           Hello, {user?.name?.split(' ')[0] || 'there'}! 👋
@@ -271,14 +270,14 @@ export default function HomeScreen() {
           <Plus size={isSmallScreen ? 20 : 24} color="white" />
         </TouchableOpacity>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#1DBF73',
     ...(isWeb && isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
   header: {
@@ -344,6 +343,7 @@ const baseStyles = {
   },
   content: {
     flex: 1,
+    backgroundColor: '#f8f9fa',
   },
   section: {
     paddingHorizontal: isSmallScreen ? 16 : (isTablet ? 32 : 20),
