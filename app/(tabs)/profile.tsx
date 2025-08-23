@@ -34,13 +34,17 @@ import {
   Upload,
   Navigation,
   Users,
-  Check
+  Check,
+  Moon,
+  Sun,
+  Monitor
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { useAuth } from '@/hooks/auth-store';
 import { useReviews } from '@/hooks/review-store';
+import { useTheme } from '@/hooks/theme-store';
 import { mockServices } from '@/mocks/services';
 import ServiceCard from '@/components/ServiceCard';
 
@@ -52,6 +56,7 @@ const isWeb = Platform.OS === 'web';
 export default function ProfileScreen() {
   const { user, updateUser, logout } = useAuth();
   const { getReviewsForUser, getUserAverageRating, getUserReviewCount } = useReviews();
+  const { theme, themeMode, setTheme, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -67,6 +72,7 @@ export default function ProfileScreen() {
   const [roleModalVisible, setRoleModalVisible] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<('contractor' | 'client')[]>([]);
   const [selectedActiveRole, setSelectedActiveRole] = useState<'contractor' | 'client'>('client');
+  const [themeModalVisible, setThemeModalVisible] = useState(false);
 
   React.useEffect(() => {
     const timer = setTimeout(() => {
@@ -433,7 +439,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <Stack.Screen options={{ title: 'Profile' }} />
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -508,20 +514,20 @@ export default function ProfileScreen() {
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.infoCard}>
-            <Text style={styles.bio}>{user.bio}</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>About</Text>
+          <View style={[styles.infoCard, { backgroundColor: theme.colors.card }]}>
+            <Text style={[styles.bio, { color: theme.colors.text }]}>{user.bio}</Text>
             
             {user.location && (
               <View style={styles.infoRow}>
-                <MapPin size={16} color="#666" />
-                <Text style={styles.infoText}>{user.location}</Text>
+                <MapPin size={16} color={theme.colors.textSecondary} />
+                <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{user.location}</Text>
               </View>
             )}
             
             <View style={styles.infoRow}>
-              <Calendar size={16} color="#666" />
-              <Text style={styles.infoText}>
+              <Calendar size={16} color={theme.colors.textSecondary} />
+              <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
                 Member since {new Date(user.joinedDate).toLocaleDateString()}
               </Text>
             </View>
@@ -531,7 +537,7 @@ export default function ProfileScreen() {
         {user.type === 'contractor' && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>My Services</Text>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>My Services</Text>
               <TouchableOpacity 
                 style={styles.createServiceButton}
                 onPress={() => router.push('/create-service')}
@@ -550,12 +556,12 @@ export default function ProfileScreen() {
               </View>
             ) : (
               <TouchableOpacity 
-                style={styles.emptyServicesCard}
+                style={[styles.emptyServicesCard, { backgroundColor: theme.colors.card }]}
                 onPress={() => router.push('/create-service')}
               >
                 <Award size={48} color="#1DBF73" />
-                <Text style={styles.emptyServicesTitle}>No Services Yet</Text>
-                <Text style={styles.emptyServicesSubtitle}>
+                <Text style={[styles.emptyServicesTitle, { color: theme.colors.text }]}>No Services Yet</Text>
+                <Text style={[styles.emptyServicesSubtitle, { color: theme.colors.textSecondary }]}>
                   Create your first service to start earning
                 </Text>
               </TouchableOpacity>
@@ -565,15 +571,15 @@ export default function ProfileScreen() {
 
         {/* Reviews Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Reviews</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Reviews</Text>
           
           {userReviews.length > 0 ? (
             <>
               {/* Reviews Summary */}
-              <View style={styles.reviewsSummary}>
+              <View style={[styles.reviewsSummary, { backgroundColor: theme.colors.card }]}>
                 <View style={styles.ratingOverview}>
                   <View style={styles.averageRatingContainer}>
-                    <Text style={styles.averageRatingNumber}>{averageRating.toFixed(1)}</Text>
+                    <Text style={[styles.averageRatingNumber, { color: theme.colors.text }]}>{averageRating.toFixed(1)}</Text>
                     <View style={styles.averageRatingStars}>
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
@@ -584,13 +590,13 @@ export default function ProfileScreen() {
                         />
                       ))}
                     </View>
-                    <Text style={styles.reviewCountText}>
+                    <Text style={[styles.reviewCountText, { color: theme.colors.textSecondary }]}>
                       {reviewCount} {reviewCount === 1 ? 'review' : 'reviews'}
                     </Text>
                   </View>
                   
                   <View style={styles.reviewTypeInfo}>
-                    <Text style={styles.reviewTypeText}>
+                    <Text style={[styles.reviewTypeText, { color: theme.colors.textTertiary }]}>
                       {user?.type === 'contractor' ? 'Reviews from clients who hired me' : 'Reviews from contractors I hired'}
                     </Text>
                   </View>
@@ -600,14 +606,14 @@ export default function ProfileScreen() {
               {/* Individual Reviews */}
               <View style={styles.reviewsContainer}>
                 {userReviews.slice(0, 5).map((review) => (
-                  <View key={review.id} style={styles.reviewCard}>
+                  <View key={review.id} style={[styles.reviewCard, { backgroundColor: theme.colors.card }]}>
                     <View style={styles.reviewHeader}>
                       <Image 
                         source={{ uri: review.reviewerAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=40&h=40&fit=crop&crop=face' }}
                         style={styles.reviewerAvatar}
                       />
                       <View style={styles.reviewerInfo}>
-                        <Text style={styles.reviewerName}>{review.reviewerName}</Text>
+                        <Text style={[styles.reviewerName, { color: theme.colors.text }]}>{review.reviewerName}</Text>
                         <View style={styles.reviewRating}>
                           {[1, 2, 3, 4, 5].map((star) => (
                             <Star
@@ -617,13 +623,13 @@ export default function ProfileScreen() {
                               fill={star <= review.rating ? '#FFD700' : 'transparent'}
                             />
                           ))}
-                          <Text style={styles.reviewDate}>
+                          <Text style={[styles.reviewDate, { color: theme.colors.textTertiary }]}>
                             {new Date(review.date).toLocaleDateString()}
                           </Text>
                         </View>
                       </View>
                     </View>
-                    <Text style={styles.reviewComment} numberOfLines={4}>
+                    <Text style={[styles.reviewComment, { color: theme.colors.textSecondary }]} numberOfLines={4}>
                       {review.comment}
                     </Text>
                   </View>
@@ -631,10 +637,10 @@ export default function ProfileScreen() {
                 
                 {userReviews.length > 5 && (
                   <TouchableOpacity 
-                    style={styles.viewAllReviewsButton}
+                    style={[styles.viewAllReviewsButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
                     onPress={() => router.push('/reviews')}
                   >
-                    <Text style={styles.viewAllReviewsText}>
+                    <Text style={[styles.viewAllReviewsText, { color: theme.colors.primary }]}>
                       View all {userReviews.length} reviews
                     </Text>
                   </TouchableOpacity>
@@ -642,10 +648,10 @@ export default function ProfileScreen() {
               </View>
             </>
           ) : (
-            <View style={styles.noReviewsCard}>
-              <Star size={48} color="#E0E0E0" />
-              <Text style={styles.noReviewsTitle}>No Reviews Yet</Text>
-              <Text style={styles.noReviewsSubtitle}>
+            <View style={[styles.noReviewsCard, { backgroundColor: theme.colors.card }]}>
+              <Star size={48} color={theme.colors.border} />
+              <Text style={[styles.noReviewsTitle, { color: theme.colors.text }]}>No Reviews Yet</Text>
+              <Text style={[styles.noReviewsSubtitle, { color: theme.colors.textSecondary }]}>
                 {user?.type === 'contractor' 
                   ? 'Complete your first service to receive reviews from clients'
                   : 'Complete your first job to receive reviews from contractors'
@@ -656,16 +662,16 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Settings</Text>
           
           <TouchableOpacity 
-            style={styles.actionCard}
+            style={[styles.actionCard, { backgroundColor: theme.colors.card }]}
             onPress={openRoleModal}
           >
-            <Users size={24} color="#666" />
+            <Users size={24} color={theme.colors.textSecondary} />
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Role Settings</Text>
-              <Text style={styles.actionSubtitle}>
+              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>Role Settings</Text>
+              <Text style={[styles.actionSubtitle, { color: theme.colors.textSecondary }]}>
                 Manage your contractor and client roles
               </Text>
             </View>
@@ -673,24 +679,43 @@ export default function ProfileScreen() {
           
           {user.type === 'contractor' && (
             <TouchableOpacity 
-              style={styles.actionCard}
+              style={[styles.actionCard, { backgroundColor: theme.colors.card }]}
               onPress={() => router.push('/payment-history')}
             >
-              <DollarSign size={24} color="#666" />
+              <DollarSign size={24} color={theme.colors.textSecondary} />
               <View style={styles.actionContent}>
-                <Text style={styles.actionTitle}>Payment History</Text>
-                <Text style={styles.actionSubtitle}>
+                <Text style={[styles.actionTitle, { color: theme.colors.text }]}>Payment History</Text>
+                <Text style={[styles.actionSubtitle, { color: theme.colors.textSecondary }]}>
                   View your earnings and transaction history
                 </Text>
               </View>
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={styles.actionCard}>
-            <Settings size={24} color="#666" />
+          <TouchableOpacity 
+            style={[styles.actionCard, { backgroundColor: theme.colors.card }]}
+            onPress={() => setThemeModalVisible(true)}
+          >
+            {themeMode === 'dark' ? (
+              <Moon size={24} color={theme.colors.textSecondary} />
+            ) : themeMode === 'light' ? (
+              <Sun size={24} color={theme.colors.textSecondary} />
+            ) : (
+              <Monitor size={24} color={theme.colors.textSecondary} />
+            )}
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Account Settings</Text>
-              <Text style={styles.actionSubtitle}>
+              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>Theme</Text>
+              <Text style={[styles.actionSubtitle, { color: theme.colors.textSecondary }]}>
+                {themeMode === 'system' ? 'Follow system' : themeMode === 'dark' ? 'Dark mode' : 'Light mode'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={[styles.actionCard, { backgroundColor: theme.colors.card }]}>
+            <Settings size={24} color={theme.colors.textSecondary} />
+            <View style={styles.actionContent}>
+              <Text style={[styles.actionTitle, { color: theme.colors.text }]}>Account Settings</Text>
+              <Text style={[styles.actionSubtitle, { color: theme.colors.textSecondary }]}>
                 Manage your account preferences
               </Text>
             </View>
@@ -974,6 +999,128 @@ export default function ProfileScreen() {
                 </Text>
                 <Text style={styles.roleInfoText}>
                   • You must have at least one role selected
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+      
+      <Modal
+        visible={themeModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
+            <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
+              <X size={24} color={theme.colors.textSecondary} />
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Theme Settings</Text>
+            <TouchableOpacity onPress={() => setThemeModalVisible(false)}>
+              <Text style={[styles.saveButton, { color: theme.colors.primary }]}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.formSection}>
+              <Text style={[styles.formLabel, { color: theme.colors.text }]}>Appearance</Text>
+              <Text style={[styles.formSubtitle, { color: theme.colors.textSecondary }]}>
+                Choose how the app looks on your device
+              </Text>
+              
+              <View style={styles.themeOptions}>
+                <TouchableOpacity 
+                  style={[
+                    styles.themeOption,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    themeMode === 'light' && { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight }
+                  ]}
+                  onPress={() => setTheme('light')}
+                >
+                  <View style={styles.themeOptionContent}>
+                    <View style={styles.themeOptionHeader}>
+                      <Sun size={24} color={themeMode === 'light' ? theme.colors.primary : theme.colors.textSecondary} />
+                      <Text style={[
+                        styles.themeOptionTitle,
+                        { color: theme.colors.text },
+                        themeMode === 'light' && { color: theme.colors.primary }
+                      ]}>Light</Text>
+                      {themeMode === 'light' && (
+                        <Check size={20} color={theme.colors.primary} />
+                      )}
+                    </View>
+                    <Text style={[styles.themeOptionDescription, { color: theme.colors.textSecondary }]}>
+                      Clean and bright interface
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.themeOption,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    themeMode === 'dark' && { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight }
+                  ]}
+                  onPress={() => setTheme('dark')}
+                >
+                  <View style={styles.themeOptionContent}>
+                    <View style={styles.themeOptionHeader}>
+                      <Moon size={24} color={themeMode === 'dark' ? theme.colors.primary : theme.colors.textSecondary} />
+                      <Text style={[
+                        styles.themeOptionTitle,
+                        { color: theme.colors.text },
+                        themeMode === 'dark' && { color: theme.colors.primary }
+                      ]}>Dark</Text>
+                      {themeMode === 'dark' && (
+                        <Check size={20} color={theme.colors.primary} />
+                      )}
+                    </View>
+                    <Text style={[styles.themeOptionDescription, { color: theme.colors.textSecondary }]}>
+                      Easy on the eyes in low light
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[
+                    styles.themeOption,
+                    { backgroundColor: theme.colors.card, borderColor: theme.colors.border },
+                    themeMode === 'system' && { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight }
+                  ]}
+                  onPress={() => setTheme('system')}
+                >
+                  <View style={styles.themeOptionContent}>
+                    <View style={styles.themeOptionHeader}>
+                      <Monitor size={24} color={themeMode === 'system' ? theme.colors.primary : theme.colors.textSecondary} />
+                      <Text style={[
+                        styles.themeOptionTitle,
+                        { color: theme.colors.text },
+                        themeMode === 'system' && { color: theme.colors.primary }
+                      ]}>System</Text>
+                      {themeMode === 'system' && (
+                        <Check size={20} color={theme.colors.primary} />
+                      )}
+                    </View>
+                    <Text style={[styles.themeOptionDescription, { color: theme.colors.textSecondary }]}>
+                      Matches your device settings
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            <View style={styles.themeInfoSection}>
+              <Text style={[styles.themeInfoTitle, { color: theme.colors.text }]}>About Themes</Text>
+              <View style={[styles.themeInfoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
+                <Text style={[styles.themeInfoText, { color: theme.colors.textSecondary }]}>
+                  • Light mode provides a clean, bright interface
+                </Text>
+                <Text style={[styles.themeInfoText, { color: theme.colors.textSecondary }]}>
+                  • Dark mode reduces eye strain in low light conditions
+                </Text>
+                <Text style={[styles.themeInfoText, { color: theme.colors.textSecondary }]}>
+                  • System mode automatically follows your device's appearance settings
                 </Text>
               </View>
             </View>
@@ -1682,6 +1829,58 @@ const baseStyles = {
     borderColor: '#e0e0e0',
   },
   roleInfoText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  themeOptions: {
+    gap: 12,
+  },
+  themeOption: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+  },
+  themeOptionContent: {
+    flex: 1,
+  },
+  themeOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 12,
+  },
+  themeOptionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    flex: 1,
+  },
+  themeOptionDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  themeInfoSection: {
+    marginTop: 24,
+  },
+  themeInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  themeInfoCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  themeInfoText: {
     fontSize: 14,
     color: '#666',
     lineHeight: 20,
