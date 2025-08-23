@@ -569,6 +569,22 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Settings</Text>
+          
+          {user.type === 'contractor' && (
+            <TouchableOpacity 
+              style={styles.actionCard}
+              onPress={() => router.push('/payment-history')}
+            >
+              <DollarSign size={24} color="#666" />
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Payment History</Text>
+                <Text style={styles.actionSubtitle}>
+                  View your earnings and transaction history
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+          
           <TouchableOpacity style={styles.actionCard}>
             <Settings size={24} color="#666" />
             <View style={styles.actionContent}>
