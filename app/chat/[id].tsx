@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,8 +16,6 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
 import { Send, MoreHorizontal, DollarSign, CreditCard, X } from 'lucide-react-native';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Message } from '@/types/message';
 import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
@@ -92,9 +90,6 @@ export default function ChatScreen() {
     notes: ''
   });
   const flatListRef = useRef<FlatList>(null);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  
-  const snapPoints = useMemo(() => ['25%', '50%'], []);
   
   const conversation = mockConversations.find(c => c.id === id);
   const otherParticipant = conversation?.participants.find(p => p.id !== 'current');
@@ -163,12 +158,10 @@ export default function ChatScreen() {
 
   const handleActionsPress = () => {
     setShowActionsSheet(true);
-    bottomSheetRef.current?.expand();
   };
 
   const handleSheetClose = useCallback(() => {
     setShowActionsSheet(false);
-    bottomSheetRef.current?.close();
   }, []);
 
   const handleRequestPayment = () => {
@@ -258,8 +251,7 @@ export default function ChatScreen() {
   };
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container}>
         <Stack.Screen 
           options={{ 
             title: otherParticipant?.name || 'Chat',
@@ -318,18 +310,26 @@ export default function ChatScreen() {
           <MoreHorizontal size={24} color="white" />
         </TouchableOpacity>
 
-        {/* Bottom Sheet */}
-        {showActionsSheet && (
-          <BottomSheet
-            ref={bottomSheetRef}
-            index={0}
-            snapPoints={snapPoints}
-            onClose={handleSheetClose}
-            enablePanDownToClose
-          >
-            <BottomSheetView style={styles.bottomSheetContent}>
-              <Text style={styles.bottomSheetTitle}>Actions</Text>
-              
+        {/* Actions Modal */}
+        <Modal
+          visible={showActionsSheet}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={handleSheetClose}
+        >
+          <SafeAreaView style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <TouchableOpacity 
+                onPress={handleSheetClose}
+                style={styles.modalCloseButton}
+              >
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+              <Text style={styles.modalTitle}>Actions</Text>
+              <View style={styles.modalCloseButton} />
+            </View>
+            
+            <View style={styles.bottomSheetContent}>
               {user?.type === 'contractor' && (
                 <TouchableOpacity 
                   style={styles.actionItem}
@@ -355,9 +355,9 @@ export default function ChatScreen() {
                   </View>
                 </TouchableOpacity>
               )}
-            </BottomSheetView>
-          </BottomSheet>
-        )}
+            </View>
+          </SafeAreaView>
+        </Modal>
 
         {/* Payment Request Form Modal */}
         <Modal
@@ -419,7 +419,6 @@ export default function ChatScreen() {
           </SafeAreaView>
         </Modal>
       </SafeAreaView>
-    </GestureHandlerRootView>
   );
 }
 
@@ -576,13 +575,6 @@ const styles = StyleSheet.create({
   bottomSheetContent: {
     flex: 1,
     padding: 20,
-  },
-  bottomSheetTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 20,
-    textAlign: 'center',
   },
   actionItem: {
     flexDirection: 'row',
