@@ -15,13 +15,14 @@ import {
   Star,
   Clock,
   MessageCircle,
-  ShoppingCart,
+  Send,
   MapPin,
   Award,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react-native';
 import { mockServices } from '@/mocks/services';
+import { mockConversations } from '@/mocks/conversations';
 import { useAuth } from '@/hooks/auth-store';
 
 export default function ServiceDetailScreen() {
@@ -54,28 +55,50 @@ export default function ServiceDetailScreen() {
       return;
     }
     
-    Alert.alert(
-      'Message Contractor',
-      `Start a conversation with ${service.contractor.name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Message',
-          onPress: () => {
-            router.push('/messages');
-          },
-        },
-      ]
+    // Check if conversation already exists
+    const existingConversation = mockConversations.find(conv => 
+      conv.participants.some(p => p.id === service.contractor.id)
     );
+    
+    if (existingConversation) {
+      router.push(`/chat/${existingConversation.id}`);
+    } else {
+      // Create new conversation (in a real app, this would be an API call)
+      Alert.alert(
+        'Message Contractor',
+        `Start a conversation with ${service.contractor.name} about "${service.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Start Chat',
+            onPress: () => {
+              // In a real app, you'd create a new conversation here
+              // For now, we'll just navigate to messages
+              router.push('/messages');
+            },
+          },
+        ]
+      );
+    }
   };
 
-  const handleRequestService = () => {
+  const handleContactContractor = () => {
     if (user?.type === 'contractor' && user.id === service.contractor.id) {
       Alert.alert('Info', 'This is your own service');
       return;
     }
 
-    router.push(`/checkout?id=${service.id}`);
+    Alert.alert(
+      'Contact Contractor',
+      `Send a message to ${service.contractor.name} about this service?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Send Message',
+          onPress: handleMessageContractor,
+        },
+      ]
+    );
   };
 
   const nextImage = () => {
@@ -208,15 +231,15 @@ export default function ServiceDetailScreen() {
           onPress={handleMessageContractor}
         >
           <MessageCircle size={20} color="#1DBF73" />
-          <Text style={styles.messageButtonText}>Message</Text>
+          <Text style={styles.messageButtonText}>Quick Message</Text>
         </TouchableOpacity>
         
         <TouchableOpacity
-          style={styles.requestButton}
-          onPress={handleRequestService}
+          style={styles.contactButton}
+          onPress={handleContactContractor}
         >
-          <ShoppingCart size={20} color="white" />
-          <Text style={styles.requestButtonText}>Checkout</Text>
+          <Send size={20} color="white" />
+          <Text style={styles.contactButtonText}>Contact Contractor</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -437,7 +460,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1DBF73',
   },
-  requestButton: {
+  contactButton: {
     flex: 2,
     flexDirection: 'row',
     alignItems: 'center',
@@ -447,7 +470,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 8,
   },
-  requestButtonText: {
+  contactButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: 'white',
