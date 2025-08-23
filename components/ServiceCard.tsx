@@ -19,9 +19,13 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 
   return (
     <TouchableOpacity 
-      style={[styles.container, { backgroundColor: theme.colors.card, borderColor: theme.colors.borderLight }]} 
+      style={[styles.container, { 
+        backgroundColor: theme.colors.card, 
+        borderColor: theme.colors.borderLight,
+        shadowColor: theme.colors.shadow,
+      }]} 
       onPress={handlePress}
-      activeOpacity={0.95}
+      activeOpacity={0.92}
     >
       <View style={styles.imageContainer}>
         <Image source={{ uri: service.images[0] }} style={styles.image} />
@@ -78,54 +82,61 @@ export default function ServiceCard({ service }: ServiceCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: BORDER_RADIUS.xl,
-    marginBottom: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xxl,
+    marginBottom: SPACING.xl,
     borderWidth: Platform.OS === 'web' ? 1 : 0,
     overflow: 'hidden',
-    ...SHADOWS.md,
+    ...SHADOWS.lg,
   },
   imageContainer: {
     position: 'relative',
   },
   image: {
     width: '100%',
-    height: SCREEN_SIZES.isSmall ? 140 : SCREEN_SIZES.isTablet ? 200 : 160,
+    height: SCREEN_SIZES.isSmall ? 160 : SCREEN_SIZES.isTablet ? 220 : 180,
     backgroundColor: '#F3F4F6',
   },
   featuredBadge: {
     position: 'absolute',
-    top: SPACING.md,
-    left: SPACING.md,
+    top: SPACING.lg,
+    left: SPACING.lg,
     backgroundColor: '#FF6B35',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.lg,
+    ...SHADOWS.sm,
   },
   featuredText: {
     color: 'white',
     ...TYPOGRAPHY.small,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   content: {
-    padding: SPACING.lg,
+    padding: SPACING.xl,
   },
   title: {
-    ...TYPOGRAPHY.h4,
-    marginBottom: SPACING.sm,
+    fontSize: SCREEN_SIZES.isSmall ? 16 : SCREEN_SIZES.isTablet ? 20 : 18,
+    fontWeight: '700' as const,
+    marginBottom: SPACING.md,
+    letterSpacing: -0.2,
   },
   contractorInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
   },
   avatar: {
-    width: SCREEN_SIZES.isSmall ? 24 : 28,
-    height: SCREEN_SIZES.isSmall ? 24 : 28,
-    borderRadius: SCREEN_SIZES.isSmall ? 12 : 14,
-    marginRight: SPACING.sm,
+    width: SCREEN_SIZES.isSmall ? 28 : 32,
+    height: SCREEN_SIZES.isSmall ? 28 : 32,
+    borderRadius: SCREEN_SIZES.isSmall ? 14 : 16,
+    marginRight: SPACING.md,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.8)',
   },
   contractorName: {
     ...TYPOGRAPHY.captionMedium,
+    fontWeight: '600',
   },
   metaRow: {
     flexDirection: 'row',
@@ -163,7 +174,8 @@ const styles = StyleSheet.create({
     ...TYPOGRAPHY.caption,
   },
   price: {
-    ...TYPOGRAPHY.h4,
-    fontWeight: '700',
+    fontSize: SCREEN_SIZES.isSmall ? 16 : SCREEN_SIZES.isTablet ? 20 : 18,
+    fontWeight: '800' as const,
+    letterSpacing: -0.2,
   },
 });

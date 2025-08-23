@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { ServiceCategory } from '@/types/service';
 import { useTheme } from '@/hooks/theme-store';
 import { 
@@ -35,13 +35,14 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
       style={[styles.container, { 
         backgroundColor: theme.colors.card,
         borderColor: theme.colors.borderLight,
+        shadowColor: theme.colors.shadow,
       }]} 
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       <View style={[styles.iconContainer, { backgroundColor: category.color }]}>
         <IconComponent 
-          size={SCREEN_SIZES.isSmall ? 18 : SCREEN_SIZES.isTablet ? 28 : 24} 
+          size={SCREEN_SIZES.isSmall ? 20 : SCREEN_SIZES.isTablet ? 32 : 28} 
           color="white" 
         />
       </View>
@@ -52,26 +53,30 @@ export default function CategoryCard({ category, onPress }: CategoryCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    width: SCREEN_SIZES.isSmall ? 100 : SCREEN_SIZES.isTablet ? 140 : 120,
-    height: SCREEN_SIZES.isSmall ? 80 : SCREEN_SIZES.isTablet ? 120 : 100,
-    borderRadius: BORDER_RADIUS.xl,
-    borderWidth: 1,
+    width: SCREEN_SIZES.isSmall ? 110 : SCREEN_SIZES.isTablet ? 160 : 130,
+    height: SCREEN_SIZES.isSmall ? 90 : SCREEN_SIZES.isTablet ? 140 : 110,
+    borderRadius: BORDER_RADIUS.xxl,
+    borderWidth: Platform.OS === 'web' ? 1 : 0,
     padding: SPACING.lg,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.md,
-    ...SHADOWS.sm,
+    marginRight: SPACING.lg,
+    marginLeft: SPACING.xs,
+    ...SHADOWS.md,
   },
   iconContainer: {
-    width: SCREEN_SIZES.isSmall ? 36 : SCREEN_SIZES.isTablet ? 56 : 48,
-    height: SCREEN_SIZES.isSmall ? 36 : SCREEN_SIZES.isTablet ? 56 : 48,
+    width: SCREEN_SIZES.isSmall ? 44 : SCREEN_SIZES.isTablet ? 64 : 56,
+    height: SCREEN_SIZES.isSmall ? 44 : SCREEN_SIZES.isTablet ? 64 : 56,
     borderRadius: BORDER_RADIUS.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
+    ...SHADOWS.sm,
   },
   name: {
-    ...TYPOGRAPHY.smallMedium,
+    ...TYPOGRAPHY.captionMedium,
     textAlign: 'center',
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 });

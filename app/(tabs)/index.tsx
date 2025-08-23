@@ -8,10 +8,12 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Platform
+  Platform,
+  Animated,
+  Dimensions
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, Filter, MapPin, Star, DollarSign, Clock, Plus } from 'lucide-react-native';
+import { Search, Filter, MapPin, Star, DollarSign, Clock, Plus, TrendingUp, Award } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import ServiceCard from '@/components/ServiceCard';
@@ -29,10 +31,12 @@ import {
   SHADOWS, 
   SCREEN_SIZES, 
   GRADIENTS,
-  LAYOUT 
+  LAYOUT,
+  COLORS 
 } from '@/constants/design-system';
 
 const isWeb = Platform.OS === 'web';
+const { width: screenWidth } = Dimensions.get('window');
 
 export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,6 +44,7 @@ export default function HomeScreen() {
   const [filters, setFilters] = useState<ServiceFilters>({});
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [scrollY] = useState(new Animated.Value(0));
   const { user } = useAuth();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -106,26 +111,46 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Premium Welcome Banner */}
       <LinearGradient
-        colors={GRADIENTS.primary}
-        style={[styles.header, { paddingTop: Math.max(insets.top + SPACING.md, 50) }]}
+        colors={theme.isDark ? ['#1F2937', '#374151'] : ['#667eea', '#764ba2']}
+        style={[styles.welcomeBanner, { paddingTop: Math.max(insets.top + SPACING.xl, 60) }]}
       >
-        <Text style={styles.greeting}>
-          Hello, {user?.name?.split(' ')[0] || 'there'}! 👋
-        </Text>
-        <Text style={styles.subtitle}>
-          {user?.type === 'contractor' 
-            ? 'Ready to showcase your skills?' 
-            : 'Find the perfect service for your needs'
-          }
-        </Text>
+        <View style={styles.welcomeContent}>
+          <View style={styles.greetingSection}>
+            <Text style={styles.welcomeGreeting}>
+              Hello, {user?.name?.split(' ')[0] || 'Jimmel'}!
+            </Text>
+            <Text style={styles.welcomeSubtitle}>
+              {user?.type === 'contractor' 
+                ? 'Ready to showcase your expertise?' 
+                : 'Discover premium services tailored for you'
+              }
+            </Text>
+          </View>
+          
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <View style={[styles.statCard, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <TrendingUp size={16} color="white" />
+              <Text style={styles.statNumber}>2.5k+</Text>
+              <Text style={styles.statLabel}>Services</Text>
+            </View>
+            <View style={[styles.statCard, { backgroundColor: 'rgba(255, 255, 255, 0.15)' }]}>
+              <Award size={16} color="white" />
+              <Text style={styles.statNumber}>4.9</Text>
+              <Text style={styles.statLabel}>Rating</Text>
+            </View>
+          </View>
+        </View>
         
+        {/* Enhanced Search Bar */}
         <View style={styles.searchContainer}>
           <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
             <Search size={20} color={theme.colors.textTertiary} />
             <TextInput
               style={[styles.searchInput, { color: theme.colors.text }]}
-              placeholder="Search services..."
+              placeholder="Search premium services..."
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholderTextColor={theme.colors.textTertiary}
@@ -145,9 +170,21 @@ export default function HomeScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView style={[styles.content, { backgroundColor: theme.colors.background }]} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView 
+        style={[styles.content, { backgroundColor: theme.colors.background }]} 
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        {/* Enhanced Categories Section */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Categories</Text>
+          <View style={[styles.sectionHeader, { paddingHorizontal: LAYOUT.containerPadding }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Browse Categories</Text>
+            <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Find services by category</Text>
+          </View>
           <FlatList
             data={categories}
             horizontal
@@ -223,19 +260,38 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {/* Premium Featured Services Section */}
         {featuredServices.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Featured Services</Text>
-            {featuredServices.map((service) => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
+            <View style={[styles.sectionHeader, { paddingHorizontal: LAYOUT.containerPadding }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Featured Services</Text>
+              <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Hand-picked premium offerings</Text>
+            </View>
+            <FlatList
+              data={featuredServices}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.featuredServiceCard}>
+                  <ServiceCard service={item} />
+                </View>
+              )}
+              contentContainerStyle={styles.featuredServicesList}
+              snapToInterval={screenWidth * 0.85}
+              decelerationRate="fast"
+            />
           </View>
         )}
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            {featuredServices.length > 0 ? 'More Services' : 'All Services'}
-          </Text>
+        {/* All Services Section */}
+        <View style={[styles.section, { paddingHorizontal: LAYOUT.containerPadding }]}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              {featuredServices.length > 0 ? 'All Services' : 'Available Services'}
+            </Text>
+            <Text style={[styles.sectionSubtitle, { color: theme.colors.textSecondary }]}>Explore all available options</Text>
+          </View>
           {regularServices.map((service) => (
             <ServiceCard key={service.id} service={service} />
           ))}
@@ -252,7 +308,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <FilterModal
         visible={showFilterModal}
@@ -286,34 +342,68 @@ const baseStyles = {
     flex: 1,
     ...(isWeb && SCREEN_SIZES.isTablet ? {} : isWeb ? { maxWidth: 480, alignSelf: 'center', width: '100%' } : {}),
   },
-  header: {
+  welcomeBanner: {
     paddingHorizontal: LAYOUT.containerPadding,
-    paddingBottom: SPACING.xl,
-    paddingTop: SPACING.md,
+    paddingBottom: SPACING.xxxl,
+    borderBottomLeftRadius: BORDER_RADIUS.xxl,
+    borderBottomRightRadius: BORDER_RADIUS.xxl,
   },
-  greeting: {
-    ...TYPOGRAPHY.h2,
-    color: 'white',
-    marginBottom: SPACING.xs,
-  },
-  subtitle: {
-    ...TYPOGRAPHY.body,
-    color: 'rgba(255, 255, 255, 0.9)',
+  welcomeContent: {
     marginBottom: SPACING.xl,
+  },
+  greetingSection: {
+    marginBottom: SPACING.xl,
+  },
+  welcomeGreeting: {
+    fontSize: SCREEN_SIZES.isSmall ? 28 : SCREEN_SIZES.isTablet ? 40 : 32,
+    fontWeight: '800' as const,
+    color: 'white',
+    marginBottom: SPACING.sm,
+    letterSpacing: -0.5,
+  },
+  welcomeSubtitle: {
+    ...TYPOGRAPHY.body,
+    color: 'rgba(255, 255, 255, 0.85)',
+    lineHeight: SCREEN_SIZES.isSmall ? 22 : 26,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: SPACING.md,
+  },
+  statCard: {
+    flex: 1,
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.lg,
+    alignItems: 'center',
+    backdropFilter: 'blur(10px)',
+  },
+  statNumber: {
+    fontSize: SCREEN_SIZES.isSmall ? 18 : 20,
+    fontWeight: '700' as const,
+    color: 'white',
+    marginTop: SPACING.xs,
+  },
+  statLabel: {
+    ...TYPOGRAPHY.small,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: SPACING.xs / 2,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.md,
+    marginTop: SPACING.lg,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: BORDER_RADIUS.xl,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-    ...SHADOWS.sm,
+    borderRadius: BORDER_RADIUS.xxl,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: SPACING.lg,
+    ...SHADOWS.lg,
+    borderWidth: Platform.OS === 'web' ? 1 : 0,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   searchInput: {
     flex: 1,
@@ -321,13 +411,15 @@ const baseStyles = {
     ...TYPOGRAPHY.body,
   },
   filterButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    padding: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xxl,
     position: 'relative',
+    borderWidth: Platform.OS === 'web' ? 1 : 0,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   filterButtonActive: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   filterBadge: {
     position: 'absolute',
@@ -349,16 +441,33 @@ const baseStyles = {
     flex: 1,
   },
   section: {
-    paddingHorizontal: LAYOUT.containerPadding,
-    paddingVertical: LAYOUT.sectionSpacing,
-    paddingBottom: 0,
+    paddingTop: SPACING.xxxl,
+    paddingBottom: SPACING.lg,
+  },
+  sectionHeader: {
+    marginBottom: SPACING.xl,
   },
   sectionTitle: {
-    ...TYPOGRAPHY.h3,
-    marginBottom: SPACING.lg,
+    fontSize: SCREEN_SIZES.isSmall ? 22 : SCREEN_SIZES.isTablet ? 28 : 24,
+    fontWeight: '700' as const,
+    letterSpacing: -0.3,
+  },
+  sectionSubtitle: {
+    ...TYPOGRAPHY.caption,
+    marginTop: SPACING.xs,
+    letterSpacing: 0.2,
   },
   categoriesList: {
     paddingRight: LAYOUT.containerPadding,
+    paddingLeft: SPACING.xs,
+  },
+  featuredServiceCard: {
+    width: screenWidth * 0.85,
+    marginRight: SPACING.lg,
+  },
+  featuredServicesList: {
+    paddingLeft: LAYOUT.containerPadding,
+    paddingRight: SPACING.lg,
   },
   activeFiltersContainer: {
     marginHorizontal: LAYOUT.containerPadding,
