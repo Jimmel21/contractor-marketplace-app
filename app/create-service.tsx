@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, DollarSign, Camera, ChevronDown, X } from 'lucide-react-native';
+import { ArrowLeft, DollarSign, Camera, ChevronDown, X, ImageIcon } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { categories } from '@/constants/categories';
 import { useAuth } from '@/hooks/auth-store';
 
@@ -25,6 +26,7 @@ export default function CreateServiceScreen() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [price, setPrice] = useState('');
   const [photo, setPhoto] = useState('');
+  const [photos, setPhotos] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -41,6 +43,76 @@ export default function CreateServiceScreen() {
     'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop',
     'https://images.unsplash.com/photo-1553877522-43269d4ea984?w=400&h=300&fit=crop'
   ];
+
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to upload photos.');
+      return false;
+    }
+    return true;
+  };
+
+  const requestCameraPermissions = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Sorry, we need camera permissions to take photos.');
+      return false;
+    }
+    return true;
+  };
+
+  const pickImageFromGallery = async () => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+    });
+
+    if (!result.canceled) {
+      if (result.assets && result.assets.length > 0) {
+        const newPhotos = result.assets.map(asset => asset.uri);
+        setPhotos(prev => [...prev, ...newPhotos].slice(0, 5)); // Max 5 photos
+        if (newPhotos.length > 0) {
+          setPhoto(newPhotos[0]); // Set first photo as main
+        }
+      }
+      setShowPhotoModal(false);
+    }
+  };
+
+  const takePhoto = async () => {
+    const hasPermission = await requestCameraPermissions();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const newPhoto = result.assets[0].uri;
+      setPhotos(prev => [newPhoto, ...prev].slice(0, 5)); // Add to beginning, max 5 photos
+      setPhoto(newPhoto);
+      setShowPhotoModal(false);
+    }
+  };
+
+  const removePhoto = (photoToRemove: string) => {
+    setPhotos(prev => prev.filter(p => p !== photoToRemove));
+    if (photo === photoToRemove) {
+      const remainingPhotos = photos.filter(p => p !== photoToRemove);
+      setPhoto(remainingPhotos.length > 0 ? remainingPhotos[0] : '');
+    }
+  };
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -90,6 +162,7 @@ export default function CreateServiceScreen() {
         category: selectedCategory,
         price: parseFloat(price),
         photo: photo || unsplashImages[0], // Default to first image if none selected
+        photos: photos.length > 0 ? photos : [photo || unsplashImages[0]],
         contractorId: user.id,
         createdAt: new Date().toISOString()
       };
@@ -118,6 +191,7 @@ export default function CreateServiceScreen() {
               setSelectedCategory('');
               setPrice('');
               setPhoto('');
+              setPhotos([]);
               setErrors({});
             }
           }
@@ -242,27 +316,52 @@ export default function CreateServiceScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Service Photo</Text>
+              <Text style={styles.label}>Service Photos</Text>
               <TouchableOpacity
                 style={styles.photoUploadButton}
                 onPress={() => setShowPhotoModal(true)}
               >
-                {photo ? (
+                {photos.length > 0 || photo ? (
                   <View style={styles.photoPreview}>
-                    <Image source={{ uri: photo }} style={styles.photoImage} />
+                    <Image source={{ uri: photo || photos[0] }} style={styles.photoImage} />
                     <View style={styles.photoOverlay}>
                       <Camera size={24} color="white" />
-                      <Text style={styles.photoOverlayText}>Change Photo</Text>
+                      <Text style={styles.photoOverlayText}>Manage Photos</Text>
                     </View>
                   </View>
                 ) : (
                   <View style={styles.photoPlaceholder}>
                     <Camera size={32} color="#666" />
-                    <Text style={styles.photoPlaceholderText}>Add Service Photo</Text>
-                    <Text style={styles.photoPlaceholderSubtext}>Choose from our curated collection</Text>
+                    <Text style={styles.photoPlaceholderText}>Add Service Photos</Text>
+                    <Text style={styles.photoPlaceholderSubtext}>Take photos or choose from gallery</Text>
                   </View>
                 )}
               </TouchableOpacity>
+              
+              {photos.length > 0 && (
+                <ScrollView 
+                  horizontal 
+                  style={styles.photoThumbnails}
+                  showsHorizontalScrollIndicator={false}
+                >
+                  {photos.map((photoUri, index) => (
+                    <View key={index} style={styles.thumbnailContainer}>
+                      <Image source={{ uri: photoUri }} style={styles.thumbnail} />
+                      <TouchableOpacity
+                        style={styles.removeThumbnail}
+                        onPress={() => removePhoto(photoUri)}
+                      >
+                        <X size={16} color="white" />
+                      </TouchableOpacity>
+                      {photoUri === photo && (
+                        <View style={styles.mainPhotoIndicator}>
+                          <Text style={styles.mainPhotoText}>Main</Text>
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </ScrollView>
+              )}
             </View>
 
             <TouchableOpacity
@@ -333,37 +432,90 @@ export default function CreateServiceScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Choose Service Photo</Text>
+              <Text style={styles.modalTitle}>Add Service Photos</Text>
               <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
                 <X size={24} color="#666" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.photoGrid} showsVerticalScrollIndicator={false}>
-              <View style={styles.photoGridContainer}>
-                {unsplashImages.map((imageUrl, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={[
-                      styles.photoGridItem,
-                      photo === imageUrl && styles.photoGridItemSelected
-                    ]}
-                    onPress={() => {
-                      setPhoto(imageUrl);
-                      setShowPhotoModal(false);
-                    }}
-                  >
-                    <Image source={{ uri: imageUrl }} style={styles.photoGridImage} />
-                    {photo === imageUrl && (
-                      <View style={styles.photoSelectedOverlay}>
-                        <View style={styles.photoSelectedCheck}>
-                          <Text style={styles.photoSelectedCheckText}>✓</Text>
+            
+            {/* Photo Action Buttons */}
+            <View style={styles.photoActions}>
+              <TouchableOpacity style={styles.photoActionButton} onPress={takePhoto}>
+                <Camera size={24} color="#1DBF73" />
+                <Text style={styles.photoActionText}>Take Photo</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.photoActionButton} onPress={pickImageFromGallery}>
+                <ImageIcon size={24} color="#1DBF73" />
+                <Text style={styles.photoActionText}>Choose from Gallery</Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Current Photos */}
+            {photos.length > 0 && (
+              <View style={styles.currentPhotosSection}>
+                <Text style={styles.sectionTitle}>Your Photos ({photos.length}/5)</Text>
+                <ScrollView horizontal style={styles.currentPhotosScroll} showsHorizontalScrollIndicator={false}>
+                  {photos.map((photoUri, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.currentPhotoItem,
+                        photo === photoUri && styles.currentPhotoItemSelected
+                      ]}
+                      onPress={() => setPhoto(photoUri)}
+                    >
+                      <Image source={{ uri: photoUri }} style={styles.currentPhotoImage} />
+                      <TouchableOpacity
+                        style={styles.removeCurrentPhoto}
+                        onPress={() => removePhoto(photoUri)}
+                      >
+                        <X size={14} color="white" />
+                      </TouchableOpacity>
+                      {photoUri === photo && (
+                        <View style={styles.currentPhotoSelectedOverlay}>
+                          <Text style={styles.currentPhotoSelectedText}>Main</Text>
                         </View>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                ))}
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
               </View>
-            </ScrollView>
+            )}
+            
+            {/* Stock Photos */}
+            <View style={styles.stockPhotosSection}>
+              <Text style={styles.sectionTitle}>Stock Photos</Text>
+              <ScrollView style={styles.photoGrid} showsVerticalScrollIndicator={false}>
+                <View style={styles.photoGridContainer}>
+                  {unsplashImages.map((imageUrl, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.photoGridItem,
+                        photo === imageUrl && styles.photoGridItemSelected
+                      ]}
+                      onPress={() => {
+                        setPhoto(imageUrl);
+                        if (!photos.includes(imageUrl)) {
+                          setPhotos(prev => [imageUrl, ...prev].slice(0, 5));
+                        }
+                        setShowPhotoModal(false);
+                      }}
+                    >
+                      <Image source={{ uri: imageUrl }} style={styles.photoGridImage} />
+                      {photo === imageUrl && (
+                        <View style={styles.photoSelectedOverlay}>
+                          <View style={styles.photoSelectedCheck}>
+                            <Text style={styles.photoSelectedCheckText}>✓</Text>
+                          </View>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
@@ -686,5 +838,122 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  photoThumbnails: {
+    marginTop: 12,
+  },
+  thumbnailContainer: {
+    position: 'relative',
+    marginRight: 8,
+  },
+  thumbnail: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    resizeMode: 'cover',
+  },
+  removeThumbnail: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#EF4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  mainPhotoIndicator: {
+    position: 'absolute',
+    bottom: 2,
+    left: 2,
+    right: 2,
+    backgroundColor: 'rgba(29, 191, 115, 0.9)',
+    borderRadius: 4,
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  mainPhotoText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  photoActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+  },
+  photoActionButton: {
+    flex: 1,
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1DBF73',
+  },
+  photoActionText: {
+    color: '#1DBF73',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 8,
+  },
+  currentPhotosSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  stockPhotosSection: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: 12,
+  },
+  currentPhotosScroll: {
+    flexDirection: 'row',
+  },
+  currentPhotoItem: {
+    position: 'relative',
+    marginRight: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  currentPhotoItemSelected: {
+    borderWidth: 2,
+    borderColor: '#1DBF73',
+  },
+  currentPhotoImage: {
+    width: 80,
+    height: 80,
+    resizeMode: 'cover',
+  },
+  removeCurrentPhoto: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  currentPhotoSelectedOverlay: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    right: 4,
+    backgroundColor: 'rgba(29, 191, 115, 0.9)',
+    borderRadius: 4,
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  currentPhotoSelectedText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });
