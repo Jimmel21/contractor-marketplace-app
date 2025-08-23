@@ -468,19 +468,33 @@ export default function ProfileScreen() {
 
         {canToggleRole && (
           <View style={styles.section}>
-            <View style={styles.userTypeToggle}>
-              <View style={styles.toggleInfo}>
-                <Briefcase size={20} color="#1a1a1a" />
-                <Text style={styles.toggleLabel}>
-                  I'm a {user.type === 'contractor' ? 'contractor' : 'client'}
-                </Text>
-              </View>
-              <Switch
-                value={user.type === 'contractor'}
-                onValueChange={toggleUserType}
-                trackColor={{ false: '#E0E0E0', true: '#1DBF73' }}
-                thumbColor="white"
-              />
+            <View style={styles.customToggleContainer}>
+              <TouchableOpacity 
+                style={styles.customToggle}
+                onPress={toggleUserType}
+                activeOpacity={0.8}
+              >
+                <View style={[
+                  styles.toggleOption,
+                  styles.leftToggleOption,
+                  user.type === 'client' && styles.activeToggleOption
+                ]}>
+                  <Text style={[
+                    styles.toggleOptionText,
+                    user.type === 'client' && styles.activeToggleOptionText
+                  ]}>Client</Text>
+                </View>
+                <View style={[
+                  styles.toggleOption,
+                  styles.rightToggleOption,
+                  user.type === 'contractor' && styles.activeToggleOption
+                ]}>
+                  <Text style={[
+                    styles.toggleOptionText,
+                    user.type === 'contractor' && styles.activeToggleOptionText
+                  ]}>Contractor</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -1022,28 +1036,40 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 16,
   },
-  userTypeToggle: {
-    flexDirection: 'row',
+  customToggleContainer: {
     alignItems: 'center',
-    justifyContent: 'space-between',
+  },
+  customToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#8B5CF6',
+    borderRadius: 25,
+    padding: 4,
+    width: 280,
+    height: 50,
+  },
+  toggleOption: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 21,
+    marginHorizontal: 2,
+  },
+  leftToggleOption: {
+    marginLeft: 2,
+  },
+  rightToggleOption: {
+    marginRight: 2,
+  },
+  activeToggleOption: {
     backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  toggleInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  toggleLabel: {
+  toggleOptionText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1a1a1a',
-    marginLeft: 12,
+    color: 'white',
+  },
+  activeToggleOptionText: {
+    color: '#8B5CF6',
   },
   infoCard: {
     backgroundColor: 'white',
